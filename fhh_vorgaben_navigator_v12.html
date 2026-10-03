@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FHH Vorgaben-Navigator</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --panel:#ffffff; --text:#172033; --muted:#5b6678; --line:#dfe4ea;
+    --accent:#0b5cab; --accent-soft:#eaf3fb; --focus:#f59e0b;
+    --must-bg:#fdecec; --must-fg:#9b1c1c;
+    --cond-bg:#fdf0e3; --cond-fg:#8a3c00;
+    --should-bg:#fff5d8; --should-fg:#7a5000;
+    --can-bg:#eaf7ef; --can-fg:#186a3b;
+    --open-bg:#eef2f6; --open-fg:#3f4b5c;
+    --low-bg:#f2f0f7; --low-fg:#5b35b0;
+    --shadow:0 8px 28px rgba(20,35,55,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.45}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+  .skip{position:absolute;left:8px;top:-60px;background:#fff;color:var(--accent);padding:8px 12px;border-radius:8px;z-index:100}
+  .skip:focus{top:8px}
+  :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  button{font:inherit;color:inherit}
+  a{color:var(--accent)}
+  header{background:linear-gradient(135deg,#12375b,#0b5cab);color:#fff;padding:24px 32px}
+  header h1{margin:0 0 6px;font-size:26px}
+  header p{margin:0;max-width:960px}
+  .head-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:12px}
+  .head-meta span{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:4px 10px}
+  .wrap{max-width:1400px;margin:0 auto;padding:24px}
+  .section-title{margin:26px 0 12px;font-size:15px;color:#3d4b60;text-transform:uppercase;letter-spacing:.04em}
+  .section-title:first-child{margin-top:0}
+
+  /* Legende */
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--muted);margin-bottom:18px}
+  .legend b{color:var(--text)}
+
+  /* Badges */
+  .badge{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+  .b-must{background:var(--must-bg);color:var(--must-fg)}
+  .b-cond{background:var(--cond-bg);color:var(--cond-fg)}
+  .b-should{background:var(--should-bg);color:var(--should-fg)}
+  .b-can{background:var(--can-bg);color:var(--can-fg)}
+  .b-open{background:var(--open-bg);color:var(--open-fg)}
+  .b-gap{background:#fff;color:#8a3c00;border:1px dashed #d08a4a}
+  .tag{display:inline-block;font-size:12px;border-radius:999px;padding:4px 9px;background:#eef2f6;color:#344054}
+
+  /* Journey */
+  .journey-wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:22px}
+  .journey-source{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .journey{display:grid;grid-template-columns:132px repeat(10,minmax(0,1fr));gap:6px;align-items:stretch}
+  .journey-controls{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .da-legend{display:flex;gap:12px;font-size:12px;color:var(--muted)}
+  .da-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 4px 0 6px;vertical-align:middle}
+  .da-dot.voll{background:#1f7a4d}.da-dot.teil{background:#d1a000}.da-dot.luecke{background:#fff;border:2px solid #c2410c}
+  .jphase{text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#173f7a;background:#e6eefb;border-radius:8px;padding:5px}
+  .jphase.core{background:#0b5cab;color:#fff}
+  .jphase-m{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#173f7a;margin:10px 0 2px}
+  .jstep.involved{background:#fbfaf7;border-style:dashed}
+  .item.typed{background:#eef6fd;border-color:#bfd8ef}
+  .lane-label{display:flex;align-items:center;font-weight:700;font-size:12px;color:#344054;padding:6px;hyphens:auto}
+  .jhead{font-size:11px;color:#5b6678;text-align:center;padding:2px;font-weight:700}
+  .jstep{display:block;width:100%;text-align:left;background:#f9fbfd;border:1px solid var(--line);border-radius:10px;padding:9px;cursor:pointer;transition:.15s}
+  .jstep:hover{border-color:#9bc2e8;background:#f2f8fd}
+  .jstep strong{display:block;font-size:12.5px;margin-bottom:4px;hyphens:auto}
+  .jstep span{display:block;font-size:11px;color:var(--muted);line-height:1.35;hyphens:auto;overflow-wrap:anywhere}
+  .jstep.primary{background:#eef6fd;border-color:#bfd8ef}
+  .jstep.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+  .jstep.dim{opacity:.35}
+  .jstep.hit{border-color:#d08a4a;background:#fff8ef}
+  .jstep .lane-mini{display:none}
+  .jstep .fhh-dot{display:inline-block;margin-top:5px;font-size:10px;font-weight:700;color:var(--can-fg)}
+  .support{display:grid;grid-template-columns:132px 1fr;gap:7px;margin-top:10px}
+  .support-box{border:1px dashed #cbd5e1;border-radius:10px;padding:10px;background:#fcfcfd;font-size:12px;color:#475467}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{padding:4px 9px;border-radius:999px;background:#eef2f6;font-size:11px;color:#344054;border:0}
+  .chip.low{background:var(--low-bg);color:var(--low-fg)}
+  .chip.link{cursor:pointer;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:12px}
+  .chip.link:hover{text-decoration:underline}
+  details.principles{margin-top:10px;font-size:12px;color:#475467}
+  details.principles summary{cursor:pointer;font-weight:700;color:#344054}
+  .jdetail{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+  .jdetail[hidden]{display:none}
+  .jdetail-head{display:flex;justify-content:space-between;gap:12px;align-items:start}
+  .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+  .full{grid-column:1/-1}
+  .item{border:1px solid var(--line);border-radius:9px;padding:10px;background:#fbfcfd;font-size:14px}
+  .item > strong:first-child{display:block;font-size:12px;color:#4a5870;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+  .state{display:grid;grid-template-columns:180px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .state:last-child{border-bottom:0}
+  .state-label{font-size:12px;font-weight:700;border-radius:8px;padding:4px 8px;align-self:start;text-align:center}
+  .s-fixed{background:#e6eefb;color:#173f7a}
+  .s-fhh{background:var(--can-bg);color:var(--can-fg)}
+  .s-interpret{background:var(--should-bg);color:var(--should-fg)}
+  .s-open{background:var(--open-bg);color:var(--open-fg)}
+  .projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:8px}
+  .project{border:1px solid var(--line);border-radius:9px;background:#fff;padding:10px;font-size:13px}
+  .project-top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px}
+  .project-name{font-weight:700}
+  .project p{margin:4px 0 6px;color:#3d4b60}
+  .project small{color:var(--muted)}
+
+  /* Toolbar */
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .search{flex:1;min-width:240px;padding:11px 13px;border:1px solid #c5cdd8;border-radius:10px;background:#fff;font-size:14px}
+  .seg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .seg-label{font-size:12px;color:var(--muted);margin-right:2px}
+  .pill{border:1px solid #c5cdd8;background:#fff;border-radius:999px;padding:7px 12px;cursor:pointer;font-size:13px}
+  .pill[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .result-count{font-size:12px;color:var(--muted);margin:4px 0 12px}
+
+  /* Cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+  .card{display:flex;flex-direction:column;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);cursor:pointer;transition:.15s transform,.15s box-shadow}
+  .card:hover{transform:translateY(-2px);box-shadow:0 12px 34px rgba(20,35,55,.12)}
+  .card h3{margin:0 0 8px;font-size:18px}
+  .card p{margin:0 0 12px;color:var(--muted)}
+  .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+  .card .steps-line{font-size:12px;color:var(--muted);margin-top:10px}
+  .empty{background:#fff;border:1px dashed #c5cdd8;border-radius:12px;padding:24px;text-align:center;color:var(--muted)}
+
+  /* Rollenansicht */
+  .role-view{display:grid;gap:14px}
+  .rv-topic{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+  .rv-head{display:flex;justify-content:space-between;gap:10px;align-items:start;flex-wrap:wrap}
+  .rv-head h3{margin:0;font-size:16px}
+  .rv-topic ol{margin:8px 0 0;padding-left:20px}
+  .rv-topic li{margin:3px 0}
+  .linkbtn{background:none;border:0;color:var(--accent);cursor:pointer;padding:0;text-decoration:underline;font-size:13px}
+
+  /* Drawer */
+  .overlay{position:fixed;inset:0;background:rgba(10,20,35,.42);z-index:40}
+  .overlay[hidden]{display:none}
+  .drawer{position:fixed;right:0;top:0;width:min(800px,100%);height:100vh;background:#fff;box-shadow:-18px 0 50px rgba(0,0,0,.18);z-index:50;overflow-y:auto;transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
+  .drawer.open{transform:none;visibility:visible}
+  .drawer-head{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:16px 22px;z-index:2}
+  .drawer-actions{float:right;display:flex;gap:6px}
+  .iconbtn{border:0;background:#eef2f6;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px}
+  .drawer h2{margin:0 0 6px;font-size:22px}
+  .subtitle{color:var(--muted);font-size:14px}
+  .drawer-body{padding:8px 22px 22px}
+  .box{border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0;background:#fbfcfd}
+  .box h3{margin:0 0 10px;font-size:16px}
+  .how-list{display:grid;gap:8px}
+  .how{display:grid;grid-template-columns:28px 1fr;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px}
+  .num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:12px}
+  .how b{display:block;margin-bottom:3px}
+  .how span{color:var(--muted);font-size:13px}
+  .role-list{display:grid;gap:8px}
+  .role{border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+  .role-btn{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;background:#fff;border:0;padding:11px 12px;cursor:pointer}
+  .role-btn:hover{background:#f6f9fc}
+  .role-name{font-weight:700;color:var(--accent)}
+  .role-btn .chev{transition:transform .15s}
+  .role-btn[aria-expanded="true"] .chev{transform:rotate(90deg)}
+  .role-panel{border-top:1px solid var(--line);padding:12px;background:#fbfcfd}
+  .role-panel[hidden]{display:none}
+  .role-panel ol{margin:0 0 10px;padding-left:20px}
+  .role-panel li{margin:3px 0}
+  .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:#46566e;background:#f3f6f9;font-weight:700}
+  .matrix td.crit{font-weight:700;width:22%}
+  .matrix td.mid{background:#fffaf0}
+  .matrix td.high{background:#fff4f4}
+  .frame{display:grid;gap:8px}
+  .frame-row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:start;background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px}
+  .frame-row ul{margin:0;padding-left:18px}
+  .dots{letter-spacing:2px;color:var(--accent);font-size:13px;white-space:nowrap}
+  .dots .off{color:#c5cdd8}
+  .impact-text{display:block;font-size:12px;color:var(--muted)}
+  .src-list{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+  .src-list li{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px}
+  .chk{font-size:11px;font-weight:700;margin-left:6px}
+  .chk.ok{color:var(--can-fg)}
+  .chk.no{color:#8a3c00}
+  .note{font-size:12px;color:var(--muted);margin-top:14px}
+  .scroll-x{overflow-x:auto}
+
+  /* Prüfprotokoll */
+  details.log{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-top:26px;box-shadow:var(--shadow)}
+  details.log summary{cursor:pointer;font-weight:700}
+  details.log h4{margin:14px 0 6px}
+  details.log ul{margin:0;padding-left:20px;font-size:14px}
+  details.log li{margin:3px 0}
+
+  @media (max-width:1200px){
+    .journey{grid-template-columns:1fr}
+    .journey .lane-label,.journey .jhead,.journey .jphase{display:none}
+    .jcol{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;align-items:stretch}
+    .jcol .jnum{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:10px;padding:5px 9px}
+    .jstep .lane-mini{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:3px}
+    .support{grid-template-columns:1fr}
+    .grid3{grid-template-columns:1fr}
+  }
+  @media (min-width:1201px){ .jcol{display:contents} .jcol .jnum{display:none} }
+  @media (max-width:640px){
+    header{padding:18px 16px} header h1{font-size:21px}
+    .wrap{padding:16px}
+    .jcol{grid-template-columns:1fr}
+    .jcol .jnum{justify-content:flex-start;padding:4px 8px}
+    .state,.frame-row{grid-template-columns:1fr}
+    .role-btn{grid-template-columns:1fr auto}
+    .role-btn .role-task{grid-column:1/-1;grid-row:2}
+    .grid2{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important;scroll-behavior:auto!important} }
+  @media print{
+    body.print-drawer > *:not(#drawer){display:none!important}
+    body.print-drawer #drawer{position:static;transform:none;visibility:visible;box-shadow:none;width:100%;height:auto;overflow:visible}
+    body.print-drawer .drawer-head{position:static}
+    body.print-drawer .drawer-actions{display:none}
+    body.print-drawer .role-panel{display:block!important}
+    .box{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#topics">Zu den Themen springen</a>
+<header>
+  <h1>FHH Vorgaben-Navigator – Fachverfahren</h1>
+  <p>Vom Anlass über das Verwaltungsverfahren bis zur Leistungserbringung und Archivierung: nicht nur „Was gilt?“, sondern „Wie wird es umgesetzt, durch wen und mit welchem Nachweis?“</p>
+  <p style="font-size:13px;margin-top:8px;opacity:.92"><b>Evidenzregel:</b> Rechtsquelle und Verbindlichkeit stehen getrennt von abgeleiteten Handlungsfolgen. Jede Quelle trägt einen Prüfvermerk.</p>
+  <div class="head-meta" aria-label="Versionsangaben">
+    <span>Prototyp v12</span>
+    <span>Quellen online geprüft am 03.10.2026</span>
+    <span>Keine Rechtsberatung – vor produktivem Einsatz fachlich validieren</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="legend" role="note" aria-label="Legende Verbindlichkeit">
+    <b>Legende:</b>
+    <span><span class="badge b-must">MUSS</span> gesetzlich verpflichtend</span>
+    <span><span class="badge b-cond">MUSS – bedingt</span> nur im festgelegten Anwendungsbereich</span>
+    <span><span class="badge b-should">SOLL</span> Regelfall, Abweichung begründen</span>
+    <span><span class="badge b-can">KANN</span> Befugnis / Option</span>
+    <span><span class="badge b-open">UNKLAR</span> Pflichtgrad nicht belegt</span>
+    <span><span class="badge b-gap">FHH-Quelle fehlt</span> keine öffentlich belegte FHH-Vorgabe gefunden</span>
+    <span style="flex-basis:100%">Ein Thema kann MUSS sein, während eine einzelne Rolle darin nur SOLL- oder KANN-Aufgaben hat: Der Pflichtgrad gilt je Rolle.</span>
+  </div>
+
+  <h2 class="section-title">Ende-zu-Ende-Sicht – Kunde, Verwaltung und Leistungserbringung</h2>
+  <section class="journey-wrap" aria-label="Ende-zu-Ende-Journey">
+    <div class="journey-source">
+      Die Journey bildet den <b>gesamten Verwaltungsprozess</b> ab – nicht nur den Online-Dienst: vom Anlass über Sachverhaltsermittlung und Entscheidung bis zur <b>tatsächlichen Leistungserbringung</b>, Überwachung, Archivierung und Steuerung. Drei Spuren zeigen, was Kunde, zuständige Behörde und beteiligte Stellen jeweils tun. Alle Eingangskanäle (online, Papier, vor Ort) münden in denselben Vorgang.
+      <br>Abgleich mit der Deutschland-Architektur (IT-Planungsrat, Version 1.0 vom 13.02.2026): Deren Wertstrom heißt „Inanspruchnahme einer Verwaltungsleistung“ und ist aus Kundensicht gedacht – Entscheidung, Vollzug, Rechtsbehelf und Archivierung sind dort <b>nicht oder nur mit niedrigem Reifegrad</b> beschrieben. Die Markierung je Schritt zeigt diese Lücken.
+      <b>Die 10 Schritte sind eine Strukturierung dieses Navigators, keine offiziell beschlossene Schrittfolge.</b>
+      <a href="https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf" target="_blank" rel="noopener">D-Architektur öffnen<span class="sr-only"> (neues Fenster)</span></a>
+    </div>
+    <div class="journey-controls">
+      <div class="seg" role="group" aria-label="Leistungstyp für die Schritte 7 und 8" id="typeGroup">
+        <span class="seg-label">Leistungstyp (Schritte 7–8):</span>
+        <button class="pill" type="button" data-type="geld" aria-pressed="true">Geldleistung</button>
+        <button class="pill" type="button" data-type="genehmigung" aria-pressed="false">Genehmigung / Erlaubnis</button>
+        <button class="pill" type="button" data-type="dokument" aria-pressed="false">Dokument / Nachweis</button>
+        <button class="pill" type="button" data-type="register" aria-pressed="false">Register- / Statusänderung</button>
+      </div>
+      <div class="da-legend" aria-label="Abdeckung durch die Deutschland-Architektur">
+        <span><span class="da-dot voll"></span>D-Architektur abgedeckt</span>
+        <span><span class="da-dot teil"></span>teilweise</span>
+        <span><span class="da-dot luecke"></span>Lücke</span>
+      </div>
+    </div>
+
+    <div class="journey" id="journey"></div>
+
+    <div class="support">
+      <div class="lane-label">Querschnitt / Bausteine</div>
+      <div class="support-box">
+        <div class="chips" id="blockChips"></div>
+        <details class="principles">
+          <summary>10 Architekturprinzipien der D-Architektur</summary>
+          <div class="chips" style="margin-top:8px" id="principleChips"></div>
+          <p style="margin:8px 0 0">Zusätzlich gelten laut Dokument die Vorgaben der Nationalen IT-Architekturrichtlinie in ihrem jeweiligen Verbindlichkeitsgrad (kann/soll/muss).</p>
+        </details>
+      </div>
+    </div>
+
+    <div class="jdetail" id="journeyDetail" hidden aria-live="polite" tabindex="-1">
+      <div class="jdetail-head">
+        <div><h3 id="jTitle" style="margin:0 0 4px"></h3><div class="subtitle" id="jSubtitle"></div></div>
+        <button class="pill" type="button" id="jClose">Schließen</button>
+      </div>
+      <div class="grid3" id="jGrid"></div>
+    </div>
+  </section>
+
+  <h2 class="section-title" id="topics">Querschnitts- und Umsetzungsthemen</h2>
+  <div class="toolbar">
+    <label for="search" class="sr-only">Themen, Aufgaben, Quellen oder Journey-Schritte durchsuchen</label>
+    <input id="search" class="search" type="search" placeholder="Thema, Aufgabe, Paragraf oder Baustein suchen …" />
+  </div>
+  <div class="toolbar">
+    <div class="seg" role="group" aria-label="Nach Verbindlichkeit filtern" id="filterGroup">
+      <span class="seg-label">Verbindlichkeit:</span>
+      <button class="pill" type="button" data-filter="all" aria-pressed="true">Alle</button>
+      <button class="pill" type="button" data-filter="muss" aria-pressed="false">MUSS</button>
+      <button class="pill" type="button" data-filter="bedingt" aria-pressed="false">MUSS – bedingt</button>
+      <button class="pill" type="button" data-filter="soll" aria-pressed="false">SOLL</button>
+      <button class="pill" type="button" data-filter="gap" aria-pressed="false">FHH-Quelle fehlt</button>
+    </div>
+    <div class="seg" role="group" aria-label="Ansicht nach Rolle" id="roleGroup">
+      <span class="seg-label">Ich bin:</span>
+      <button class="pill" type="button" data-role="all" aria-pressed="true">Alle Rollen</button>
+      <button class="pill" type="button" data-role="ITD" aria-pressed="false">ITD</button>
+      <button class="pill" type="button" data-role="Behörde" aria-pressed="false">Behörde</button>
+      <button class="pill" type="button" data-role="Projekt / Dienstleister" aria-pressed="false">Projekt / Dienstleister</button>
+      <button class="pill" type="button" data-role="Betrieb" aria-pressed="false">Betrieb</button>
+    </div>
+  </div>
+  <div class="result-count" id="resultCount" role="status" aria-live="polite"></div>
+  <div id="results"></div>
+
+  <details class="log" id="log">
+    <summary>Prüfprotokoll v12 – was wurde online geprüft, was hat sich gegenüber v10 geändert?</summary>
+    <div id="logBody"></div>
+  </details>
+</main>
+
+<div class="overlay" id="overlay" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle" aria-hidden="true">
+  <div class="drawer-head">
+    <div class="drawer-actions">
+      <button class="iconbtn" type="button" id="printBtn">Als Checkliste drucken</button>
+      <button class="iconbtn" type="button" id="closeBtn" aria-label="Detailansicht schließen">✕</button>
+    </div>
+    <h2 id="dTitle">Thema</h2>
+    <div class="subtitle" id="dSub"></div>
+    <div class="chips" id="dSteps" style="margin-top:8px"></div>
+  </div>
+  <div class="drawer-body">
+    <div class="box"><h3>Rechtsrahmen: Pflicht, Spielraum, offene Basis</h3><div class="frame" id="dFrame"></div></div>
+    <div class="box"><h3>Wie wird es umgesetzt?</h3><div class="how-list" id="dHow"></div></div>
+    <div class="box">
+      <h3>Verantwortung – konkrete Aufgaben je Rolle</h3>
+      <p class="note" style="margin:0 0 10px">Rolle aufklappen → Aufgaben, Zeitpunkt, Nachweis, Quelle und Einschränkung.</p>
+      <div class="role-list" id="dRoles"></div>
+    </div>
+    <div class="box" id="consBox"><h3>Konsequenzen je Kriterium</h3><div class="scroll-x" id="dCons"></div></div>
+    <div class="box" id="impBox"><h3>Auswirkungen der gewählten Ausprägung</h3><div class="scroll-x" id="dImpacts"></div></div>
+    <div class="box"><h3>Offene Punkte / Nachschärfung</h3><div id="dOpen"></div></div>
+    <div class="box"><h3>Quellen</h3><ul class="src-list" id="dSources"></ul></div>
+    <div class="note">Hinweis: Prototyp zur Struktur und Interaktion. Paragrafenangaben wurden am 03.10.2026 gegen online verfügbare Fassungen geprüft; Verbindlichkeit und Geltungsbereich sind vor produktivem Einsatz für das konkrete Vorhaben zu validieren.</div>
+  </div>
+</aside>
+
+<script>
+const CHECKED = '03.10.2026';
+
+/* ---------- Quellenregister ---------- */
+const SOURCES = {
+  da:{label:'IT-Planungsrat: Deutschland-Architektur – Zusammenfassung (Anlage 1 zum Beschluss, Version 1.0 vom 13.02.2026)',url:'https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf',ok:true},
+  vwdig:{label:'HmbVwDiG – Hamburgisches Verwaltungsdigitalisierungsgesetz vom 19.11.2024 (HmbGVBl. 2024 S. 575), Art. 1 des Digitalisierungspakets 2024',url:'https://suche.transparenz.hamburg.de/dataset/digitalisierungspaket-2024-gesetz-fuer-die-digitale-verwaltung-der-fhh-hmbvwdig',ok:true},
+  vwvfg:{label:'HmbVwVfG §§ 3a Abs. 5–6, 41 Abs. 2b – geändert durch Art. 3 Digitalisierungspaket 2024 (HmbGVBl. 2024 S. 575)',url:'https://suche.transparenz.hamburg.de/dataset/digitalisierungspaket-2024-gesetz-fuer-die-digitale-verwaltung-der-fhh-hmbvwdig',ok:true},
+  bitvo:{label:'HmbBITVO – Hamburgische Barrierefreie Informationstechnik-Verordnung vom 10.09.2019 (HmbGVBl. S. 263), §§ 1–3',url:'https://www.hamburg.de/resource/blob/270262/2ac782c2df4890ca6914fe4e31529fdf/hamburgische-barrierefreie-informationstechnik-verordnung-pdf-data.pdf',ok:true},
+  bitv:{label:'BITV 2.0 – Barrierefreie-Informationstechnik-Verordnung (Bund), in Bezug genommen durch § 1 HmbBITVO',url:'https://www.gesetze-im-internet.de/bitv_2_0/',ok:true},
+  rl2102:{label:'Richtlinie (EU) 2016/2102 über den barrierefreien Zugang zu Websites und mobilen Anwendungen öffentlicher Stellen',url:'https://eur-lex.europa.eu/eli/dir/2016/2102/oj',ok:true},
+  dsgvo:{label:'DSGVO – Verordnung (EU) 2016/679',url:'https://eur-lex.europa.eu/eli/reg/2016/679/oj',ok:true},
+  hmbdsg:{label:'HmbDSG – Hamburgisches Datenschutzgesetz (HmbBfDI)',url:'https://datenschutz-hamburg.de/rechtliches/hamburgisches-datenschutz-gesetz',ok:true},
+  itsg:{label:'HmbITSG – Hamburgisches IT-Souveränitätsgesetz vom 20.12.2022 (HmbGVBl. 2023 S. 2), §§ 1–3 und Anlage',url:'https://suche.transparenz.hamburg.de/dataset/gesetz-zur-gewaehrleistung-der-digitalen-souveraenitaet-der-freien-und-hansestadt-hamburg-hambu',ok:true},
+  ds2025:{label:'Digitalstrategie für Hamburg 2025 (Senat), u. a. PDF-S. 13 (Fachverfahren), 14 (ITD-Rolle), 22 (Sicherheit)',url:'https://digital.hamburg.de/resource/blob/1010436/3d2434f6488b743c92c732e12b66d295/pdf-digitalstrategie-2025-data.pdf',ok:true},
+  bsi:{label:'BSI IT-Grundschutz (Methodik, Standards 200-1 bis 200-4)',url:'https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/IT-Grundschutz/it-grundschutz_node.html',ok:true},
+  cyber:{label:'Cybersicherheitsstrategie für die FHH – Bürgerschafts-Drucksache 23/383 vom 13.05.2025',url:'https://www.buergerschaft-hh.de/parldok/dokument/90995/23_00383_cybersicherheitsstrategie_fuer_die_freie_und_hansestadt_hamburg',ok:true},
+  itplr:{label:'IT-Planungsrat: Übersicht Standards',url:'https://www.it-planungsrat.de/produkte-standards/standards',ok:true},
+  xbau:{label:'IT-Planungsrat Beschluss 2017/37: XBau und XPlanung als verbindliche Standards (Bau- und Planungsbereich), Anlage 1',url:'https://www.IT-Planungsrat.de/fileadmin/beschluesse/2017/Beschluss2017-37_BauPlanungsbereich_Anlage1.pdf',ok:true},
+  xrepo:{label:'XRepository – Standards, Versionen, Spezifikationen',url:'https://www.xrepository.de/',ok:true},
+  ozg:{label:'OZG – Onlinezugangsgesetz (u. a. § 2 Abs. 5 und 7, § 3 Abs. 4)',url:'https://www.gesetze-im-internet.de/ozg/',ok:true},
+  sdg:{label:'Single-Digital-Gateway-Verordnung (EU) 2018/1724',url:'https://eur-lex.europa.eu/eli/reg/2018/1724/oj',ok:true},
+  kivo:{label:'KI-Verordnung (EU) 2024/1689',url:'https://eur-lex.europa.eu/eli/reg/2024/1689/oj',ok:true},
+  help:{label:'Projekt HELP – Hamburger Effizienzlandkarte durch Prozessanalyse',url:'https://digital.hamburg.de/digitale-stadt/projekt-help-850084',ok:true},
+  partner:{label:'digital.hamburg.de: Die Projektpartner (u. a. Registermodernisierung, E-Akte 2030)',url:'https://digital.hamburg.de/digitale-stadt/die-projektpartner-umsetzungskompetenz-fuer-hamburgs-digitalstrategie-1209622',ok:true},
+  einfach:{label:'digital.hamburg.de: Neues aus den Ländern (einfach.hamburg)',url:'https://digital.hamburg.de/digitale-stadt/digitalministerkonferenz/neues-aus-den-laendern-1124724',ok:true},
+  hmbvwvfg:{label:'HmbVwVfG – Hamburgisches Verwaltungsverfahrensgesetz (u. a. §§ 24, 25, 28, 29, 35a, 36, 37, 39–41, 42a, 48–49a)',url:'https://lexaris.de/book/version/documentflat/head/1333281',ok:true},
+  archg:{label:'HmbArchG – Hamburgisches Archivgesetz vom 21.01.1991, § 3 Anbietung und Ablieferung',url:'https://umwelt-online.de/recht/allgemei/laender/hh/archivg.htm',ok:true},
+  xzufi:{label:'XZuFi – verbindlicher IT-PLR-Beschluss (Angabe aus v10)',url:'https://www.xrepository.de/',ok:false}
+};
+
+/* ---------- Deutschland-Architektur: Bausteine & Prinzipien ---------- */
+const BLOCKS = [
+  ['Zentrales Nutzenden-Frontend'],['Design-System'],['Feedback und Nutzungsanalyse'],['Postfach und Interaktion (G2C)'],
+  ['Initiierung einer Verwaltungsleistung'],['Authentifizierung'],['Abruf und Bereitstellung von Daten und Nachweisen'],
+  ['Datenaustausch'],['Ein- und Auszahlung'],['Siegeln und Signieren'],['Statusmonitoring'],['Elektronische Veraktung'],
+  ['Zentrale Verzeichnisse: Zuständigkeitsfindung, Parametrisierung, Föderale Metadaten, Techn. Schnittstellenverzeichnis'],
+  ['KI-Querschnittsdienste'],['Geokodierung'],['Kartierung'],
+  ['Vorgangs- und Sachbearbeitung',1],['Event-Verarbeitung für antragslose Verwaltung',1],['Consent',1],
+  ['Integrationsplattform',1],['Cloud-Infrastruktur',1],['Netze',1]
+];
+const PRINCIPLES = ['API-first','Serviceorientierung & lose Kopplung','Wiederverwendbarkeit & Portierbarkeit','DevSecOps Only','Zero-Trust','Technologisch aktuell','Made in EU first','Prefer Reuse over Buy over Make (Open Source bevorzugt)','Ende-zu-Ende-Digitalisierung','Managed Services only'];
+
+/* ---------- Projekte ---------- */
+const P = {
+  help:{name:'HELP',status:'aktiv, verstetigt',contribution:'Hamburgweite Prozessanalyse (seit 2023): identifiziert Optimierungs- und Digitalisierungspotenziale und baut eine Prozesslandkarte auf.',owner:'FHH',src:'help'},
+  regmo:{name:'Registermodernisierung',status:'aktiv',contribution:'Nachweise sollen nur noch einmal eingereicht werden müssen (Once-Only); Grundlage für automatisierten Nachweisabruf.',owner:'FHH im föderalen Kontext',src:'partner'},
+  einfach:{name:'einfach.hamburg',status:'aktiv (seit Anfang 2026)',contribution:'Koordinierungsstelle in der Senatskanzlei: priorisierte Planungs-, Genehmigungs- und Verwaltungsverfahren bis Ende 2027 vereinfachen und beschleunigen.',owner:'FHH / Senatskanzlei',src:'einfach'},
+  eakte:{name:'E-Akte 2030',status:'aktiv',contribution:'Umstellung der Verwaltung auf moderne digitale Akten; Bestandsakten sicher in ein neues System übertragen.',owner:'FHH',src:'partner'}
+};
+
+/* ---------- Journey ---------- */
+/* Drei Spuren: Kunde, zuständige Behörde (Sachbearbeitung), Beteiligte & Querschnitt.
+   Zehn Schritte vom Anlass bis zur Archivierung; Schritt 7 ist die eigentliche Leistungserbringung. */
+const LANES = [
+  {key:'kunde',label:'Bürger / Unternehmen',cls:'primary'},
+  {key:'beh',label:'Zuständige Behörde (Sachbearbeitung)',cls:'internal'},
+  {key:'bet',label:'Beteiligte & Querschnitt',cls:'involved'}
+];
+const PHASES = [
+  {label:'Zugang',from:0,to:2},
+  {label:'Verwaltungsverfahren',from:3,to:5},
+  {label:'Leistungserbringung',from:6,to:7},
+  {label:'Abschluss & Steuerung',from:8,to:9}
+];
+const DA_COVER = {
+  voll:{cls:'b-can',txt:'D-Architektur: abgedeckt'},
+  teil:{cls:'b-should',txt:'D-Architektur: teilweise'},
+  luecke:{cls:'b-gap',txt:'D-Architektur: Lücke'}
+};
+
+/* Leistungstypen: Schritt 7 und 8 unterscheiden sich je nach Art der Leistung grundlegend. */
+const LTYPES = {
+  geld:{label:'Geldleistung',ex:'z. B. Förderung, Zuschuss, Sozialleistung',
+    s7:{kunde:['Geld erhalten','Auszahlung, ggf. in Raten'],beh:['Auszahlung anordnen','Festsetzung, Fälligkeit, Zahlungsanordnung'],bet:['Kasse / Zahlungsverkehr','Auszahlung, Buchung, Haushaltsvollzug']},
+    s8:{kunde:['Änderungen melden','Verwendungsnachweis, Widerspruch'],beh:['Verwendung prüfen','Rückforderung, Erstattung (§ 49a)'],bet:['Rechtsbehelf / Prüfung','Widerspruchsstelle, ggf. Rechnungsprüfung']},
+    vollzug:'Zahlung anordnen und auslösen; bei wiederkehrenden Leistungen Fälligkeiten überwachen. Rückforderungen über Rücknahme/Widerruf und Erstattung (§§ 48, 49, 49a HmbVwVfG).'},
+  genehmigung:{label:'Genehmigung / Erlaubnis',ex:'z. B. Baugenehmigung, Gewerbeerlaubnis',
+    s7:{kunde:['Erlaubnis nutzen','Vorhaben umsetzen, Auflagen erfüllen'],beh:['Genehmigung wirksam','Nebenbestimmungen (§ 36), Fristen setzen'],bet:['Folgebehörden informieren','Register, Fachaufsicht, ggf. Veröffentlichung']},
+    s8:{kunde:['Auflagen nachweisen','Verlängerung, Änderung, Widerspruch'],beh:['Überwachen','Kontrolle, Widerruf (§ 49), Anordnungen'],bet:['Kontrolle & Vollstreckung','Fach-/Überwachungsbehörden, Gerichte']},
+    vollzug:'Die Leistung ist die wirksame Erlaubnis selbst; Vollzug heißt vor allem Überwachung von Auflagen und Fristen. Genehmigungsfiktion nur, wo durch Rechtsvorschrift angeordnet (§ 42a HmbVwVfG).'},
+  dokument:{label:'Dokument / Nachweis',ex:'z. B. Urkunde, Ausweis, Bescheinigung',
+    s7:{kunde:['Dokument erhalten','digital, per Post oder Abholung'],beh:['Dokument erstellen','Ausfertigung, Siegel/Signatur, Ausgabe'],bet:['Produktion & Ausgabe','Druck-/Produktionsstelle, Ausgabestelle']},
+    s8:{kunde:['Dokument verwenden','Verlust melden, Neuausstellung'],beh:['Gültigkeit verwalten','Sperrung, Einzug, Neuausstellung'],bet:['Nachweis-Nachnutzung','Abruf durch andere Stellen (Once-Only)']},
+    vollzug:'Dokument erzeugen, qualifiziert siegeln/signieren und übermitteln oder ausgeben; Abholung vor Ort braucht Termin- und Ausgabeprozess. Elektronische Nachweise sollen für andere Stellen abrufbar sein.'},
+  register:{label:'Register- / Statusänderung',ex:'z. B. Anmeldung, Eintragung',
+    s7:{kunde:['Status geändert','Bestätigung erhalten'],beh:['Register fortschreiben','Eintrag, Bestätigung erzeugen'],bet:['Folgebehörden informieren','Datenübermittlung, Event an andere Register']},
+    s8:{kunde:['Weitere Änderungen','Berichtigung, Auskunft'],beh:['Datenqualität sichern','Berichtigung, Auskunft (Art. 15/16 DSGVO)'],bet:['Antragslose Folgeleistungen','Ereignis löst Leistungen anderer Stellen aus']},
+    vollzug:'Die Leistung ist die Registeränderung; ihr Nutzen entsteht oft erst bei anderen Stellen. Hier setzt der D-Architektur-Baustein Event-Verarbeitung für antragslose Verwaltung an (Reifegrad niedrig).'}
+};
+let activeType = 'geld';
+
+const journeyData = [
+  {short:'Anlass & Gestaltung',
+   lanes:{kunde:['Anlass tritt ein','Lebenslage, Ereignis, Pflicht'],beh:['Leistung gestalten','Rechtsgrundlage, Sollprozess, Zuständigkeit'],bet:['Rahmen & Ereignisse','Gesetzgeber, Fachaufsicht, Register-Events']},
+   title:'1 · Anlass & Leistungsgestaltung',subtitle:'Bevor ein Antrag entsteht: Lebenslage und fachliche Gestaltung der Leistung',
+   customer:'Ein Ereignis (Geburt, Umzug, Gründung, Bauvorhaben) oder eine Pflicht löst Bedarf aus. Bei antragslosen Leistungen wird die Verwaltung selbst aktiv.',
+   admin:'Die Behörde gestaltet die Leistung: Rechtsgrundlage, Sollprozess über alle Kanäle, Zuständigkeiten, Daten- und Nachweisbedarf.',
+   involved:'Gesetzgeber und Fachaufsicht setzen den Rahmen; Register können Ereignisse melden, die Leistungen auslösen.',
+   daCover:'teil',
+   blocks:['Event-Verarbeitung für antragslose Verwaltung [Reifegrad niedrig]','Föderale Metadaten [Zentrale Verzeichnisse]','Parametrisierung [Zentrale Verzeichnisse]'],
+   fixed:'Die D-Architektur nennt behördeninterne Initiierung nach Ereignissen (z. B. Geburt) und Event-Verarbeitung für antragslose Verwaltung – letztere nur mit niedrigem Reifegrad.',
+   fhh:'§ 8 Abs. 2 HmbVwDiG: Neue IT-Lösungen sind E2E elektronisch abzuwickeln – das muss schon in der Leistungsgestaltung angelegt sein. Digitalstrategie 2025: breitflächige Prozessanalyse und Neudesign von Prozessketten (HELP).',
+   interpret:'Ob eine Leistung antragslos erbracht werden darf, entscheidet das Fachrecht, nicht die Architektur.',
+   open:'Für antragslose Leistungen fehlen meist Rechtsgrundlage und Datenhoheitsregeln (laut D-Architektur noch festzulegen).',
+   itd:'Prozessmodellierung und Wiederverwendung über HELP/Prozesslandkarte unterstützen.',
+   authority:'Sollprozess E2E über alle Kanäle festlegen – inklusive Bearbeitung, Vollzug und Abschluss, nicht nur den Online-Antrag.',
+   topics:['e2e','verfahren','opensource','souveraenitaet','infosec'],projects:['help','einfach'],sources:['da','vwdig','ds2025','help']},
+  {short:'Information & Beratung',
+   lanes:{kunde:['Sich informieren','online, telefonisch, vor Ort'],beh:['Beraten & Auskunft','§ 25 HmbVwVfG, Termine'],bet:['Portal & Verzeichnisse','Landesportal, Zuständigkeitsfinder']},
+   title:'2 · Information & Beratung',subtitle:'Leistung und zuständige Stelle finden – über alle Kanäle',
+   customer:'Nutzende informieren sich über Voraussetzungen, Kosten und Unterlagen – online, telefonisch oder persönlich.',
+   admin:'Die Behörde berät und gibt Auskunft (§ 25 HmbVwVfG), pflegt Leistungsbeschreibungen und vergibt Termine, wo persönliches Erscheinen nötig ist.',
+   involved:'Landesportal, Zuständigkeitsfinder und Redaktionen stellen Informationen bereit.',
+   daCover:'voll',
+   blocks:['Zentrales Nutzenden-Frontend','Zuständigkeitsfindung [Zentrale Verzeichnisse]','Design-System'],
+   fixed:'Zentrales Nutzenden-Frontend, Design-System und Zuständigkeitsfindung sind Bausteine der D-Architektur.',
+   fhh:'§ 4 Abs. 1 HmbVwDiG (MUSS): Behördeninformationen barrierefrei und allgemein verständlich. § 4 Abs. 2 (SOLL): Leistungsinfos, Kosten, Unterlagen und Formulare über das Landesportal. § 25 HmbVwVfG: Beratung und Auskunft. Digitalstrategie: einheitliches digitales Terminmanagement, wo Erscheinen nötig ist.',
+   interpret:'Nicht-digitale Kanäle bleiben zulässig und müssen konsistent zu den Online-Informationen sein.',
+   open:'Eine verbindliche XZuFi-Pflicht für die FHH ließ sich online nicht bestätigen.',
+   itd:'Landesportal, Design-Vorgaben und Terminmanagement zentral bereitstellen.',
+   authority:'Leistungsinformationen vollständig, barrierefrei und kanalübergreifend gleich pflegen.',
+   topics:['zugang','barrierefreiheit'],projects:[],sources:['da','vwdig','hmbvwvfg','ds2025']},
+  {short:'Verfahren einleiten',
+   lanes:{kunde:['Antrag stellen','online, Papier oder vor Ort; Identität'],beh:['Eingang & Vorgang','Erfassen, scannen, Vollständigkeit'],bet:['Übergabe ins Fachverfahren','Serviceportal, Nutzerkonto, Scanstelle']},
+   title:'3 · Verfahren einleiten',subtitle:'Antrag in jedem Kanal – oder Einleitung von Amts wegen',
+   customer:'Nutzende stellen den Antrag – digital mit Identitätsnachweis, aber auch schriftlich oder vor Ort.',
+   admin:'Die Behörde erfasst den Eingang kanalunabhängig, digitalisiert Papier, legt den Vorgang im Fachverfahren an und prüft Zuständigkeit und Vollständigkeit. Viele Verfahren beginnen auch von Amts wegen.',
+   involved:'Serviceportal und Nutzerkonto übergeben strukturierte Daten; Scanstellen digitalisieren Papierpost.',
+   daCover:'teil',
+   blocks:['Initiierung einer Verwaltungsleistung','Authentifizierung','Vorgangs- und Sachbearbeitung [Reifegrad niedrig]','Integrationsplattform [Reifegrad niedrig]'],
+   fixed:'Initiierung kann formular-, interaktions- oder API-basiert erfolgen; die Übergabe in die Sachbearbeitung ist nur mit niedrigem Reifegrad beschrieben.',
+   fhh:'§ 3a Abs. 5–6 HmbVwVfG: Schriftformersatz über Nutzerkonto + Online-Formular; Prüfgelegenheit und Kopie. § 3 HmbVwDiG: Digital Only für Unternehmens-Leistungen ab 01.01.2027. § 5: Zugang eröffnen. § 11 (SOLL): Papieroriginale ersetzend scannen.',
+   interpret:'Digitalstrategie: Interne Abwicklung neuer Online-Dienste über Fachverfahren, MODUL-F oder andere geeignete Lösungen.',
+   open:'Eine einheitliche technische Übergabe Online-Dienst → Fachverfahren ist nicht öffentlich festgelegt.',
+   itd:'Referenzmuster für die Übergabe in Fachverfahren und für die Digitalisierung des Posteingangs bereitstellen.',
+   authority:'Alle Eingangskanäle in denselben digitalen Vorgang führen – kein Medienbruch ab Posteingang.',
+   topics:['zugang','e2e','akte'],projects:['einfach'],sources:['vwvfg','vwdig','ds2025','da']},
+  {short:'Ermittlung & Beteiligung',
+   lanes:{kunde:['Mitwirken','Nachweise, Rückfragen, Anhörung'],beh:['Sachverhalt ermitteln','§ 24, Nachweisabruf, Anhörung § 28'],bet:['Andere Stellen beteiligen','Register, Fachbehörden, TÖB']},
+   title:'4 · Sachverhaltsermittlung & Beteiligung',subtitle:'Der interne Kern der Bearbeitung',
+   customer:'Nutzende liefern Nachweise oder stimmen dem Abruf zu, beantworten Rückfragen, werden angehört und können Akteneinsicht nehmen.',
+   admin:'Die Behörde ermittelt den Sachverhalt von Amts wegen (§ 24 HmbVwVfG), ruft Nachweise ab, hört Beteiligte vor belastenden Entscheidungen an (§ 28) und koordiniert Beteiligungen.',
+   involved:'Register und andere Behörden liefern Daten oder Stellungnahmen; Träger öffentlicher Belange werden beteiligt.',
+   daCover:'teil',
+   blocks:['Abruf und Bereitstellung von Daten und Nachweisen','Datenaustausch','Consent [Reifegrad niedrig]','Postfach und Interaktion (G2C)','Statusmonitoring'],
+   fixed:'Nachweisabruf und Datenaustausch (auch zwischen Behörden) sind Bausteine; behördeninterne Beteiligungsverfahren beschreibt die D-Architektur nicht eigens.',
+   fhh:'§ 6 HmbVwDiG: §§ 5, 5a EGovG (Nachweisabruf) gelten entsprechend. § 8 Abs. 1 (SOLL): Akten zwischen Behörden medienbruchfrei übermitteln, gesicherte Kommunikation. §§ 24, 28, 29 HmbVwVfG: Untersuchungsgrundsatz, Anhörung, Akteneinsicht.',
+   interpret:'Wie Beteiligungen technisch laufen (Postfach, Plattform, Schnittstelle), ist meist Fachrecht oder Gestaltung.',
+   open:'Ob die IT-Behörde Übermittlungsstandards per Verwaltungsvorschrift festgelegt hat (§ 8 Abs. 1 S. 2 HmbVwDiG), ist nicht öffentlich belegt.',
+   itd:'Standards für behördenübergreifende Übermittlung festlegen (KANN, § 8 Abs. 1 S. 2).',
+   authority:'Erforderliche Nachweise begründen, Beteiligungen digital organisieren, Anhörung und Akteneinsicht sicherstellen.',
+   topics:['verfahren','schnittstellen','datenschutz'],projects:['regmo'],sources:['vwdig','hmbvwvfg','da']},
+  {short:'Entscheidung',
+   lanes:{kunde:['Status verfolgen','Bearbeitungsstand einsehen'],beh:['Entscheiden','Prüfung, Ermessen, Zeichnung'],bet:['Mitzeichnung & Aufsicht','Fachaufsicht, ggf. KI-Unterstützung']},
+   title:'5 · Entscheidung',subtitle:'Prüfung, Ermessen, Zeichnung – oder vollautomatisiert',
+   customer:'Nutzende sehen den Bearbeitungsstand.',
+   admin:'Die Behörde prüft, übt Ermessen aus (§ 40 HmbVwVfG), setzt Nebenbestimmungen (§ 36) und begründet (§ 39). Vollautomatisiert nur, wenn eine Rechtsvorschrift es zulässt und kein Ermessen besteht (§ 35a).',
+   involved:'Mitzeichnung, Fachaufsicht; KI kann unterstützen (§ 13 HmbVwDiG).',
+   daCover:'luecke',
+   blocks:['Vorgangs- und Sachbearbeitung [Reifegrad niedrig]','KI-Querschnittsdienste','Statusmonitoring'],
+   fixed:'Die D-Architektur beschreibt Sachbearbeitung nur grob („im Normalfall automatisiert“) und mit niedrigem Reifegrad – Entscheidungslogik, Zeichnung und Aufsicht fehlen.',
+   fhh:'§ 35a HmbVwVfG: vollautomatisierter Verwaltungsakt nur mit Rechtsgrundlage und ohne Ermessen/Beurteilungsspielraum. §§ 36, 39, 40 HmbVwVfG. § 13 HmbVwDiG: KI-Einsatz mit Dokumentationspflichten.',
+   interpret:'Zeichnungs- und Mitzeichnungsregeln sind organisationsintern.',
+   open:'Fachrechtliche Ermächtigungen für Vollautomatisierung sind je Leistung zu prüfen.',
+   itd:'Workflow- und Automatisierungskomponenten zentral anbieten (§ 14 HmbVwDiG, KANN).',
+   authority:'Automatisierungsgrad rechtlich prüfen; Entscheidungsweg digital und nachvollziehbar gestalten.',
+   topics:['verfahren','ki','e2e'],projects:['help'],sources:['hmbvwvfg','vwdig','da']},
+  {short:'Bekanntgabe',
+   lanes:{kunde:['Bescheid erhalten','Postfach oder Papier'],beh:['Bescheid ausfertigen','Form § 37, Rechtsbehelfsbelehrung'],bet:['Zustellung & Siegel','Postfach, Siegel/Signatur, Post']},
+   title:'6 · Bekanntgabe',subtitle:'Die Entscheidung wird wirksam',
+   customer:'Nutzende erhalten den Bescheid im Postfach des Nutzerkontos oder auf Papier.',
+   admin:'Die Behörde fertigt den Bescheid formgerecht aus (§ 37 HmbVwVfG), mit Rechtsbehelfsbelehrung, und gibt ihn bekannt (§ 41).',
+   involved:'Postfachdienste, Siegel-/Signaturdienste, ggf. Postzustellung.',
+   daCover:'voll',
+   blocks:['Siegeln und Signieren','Postfach und Interaktion (G2C)','Statusmonitoring'],
+   fixed:'Siegeln/Signieren und Postfach sind Bausteine der D-Architektur.',
+   fhh:'§ 41 Abs. 2b HmbVwVfG: Einwilligung in elektronische Bekanntgabe über das Postfach gilt als erteilt, sofern nicht ausgeschlossen. § 5 Abs. 2–3 HmbVwDiG: Antwort über das Nutzerkonto-Postfach; Zugang für qualifiziert signierte/gesiegelte Dokumente.',
+   interpret:'Ob Signatur, Siegel oder Zustellung nötig ist, bestimmt das Fachrecht.',
+   open:'Zentrale FHH-Siegel-/Signaturdienste sind nicht öffentlich als verbindlich belegt.',
+   itd:'Siegel-, Signatur- und Postfachdienste standardisieren.',
+   authority:'Bekanntgabeform bestimmen; Papierweg für Nutzende ohne Postfach vorhalten.',
+   topics:['zugang','verfahren'],projects:[],sources:['hmbvwvfg','vwvfg','vwdig','da']},
+  {short:'Leistung erbringen',typed:'s7',
+   title:'7 · Leistungserbringung / Vollzug',subtitle:'Die eigentliche Leistung – hier entsteht der Nutzen',
+   customer:'Nutzende erhalten die Leistung tatsächlich – Geld, Erlaubnis, Dokument oder Statusänderung.',
+   admin:'Die Behörde setzt die Entscheidung um: Auszahlung, Ausfertigung, Registeränderung, Gebührenerhebung, Überwachung von Auflagen.',
+   involved:'Kasse, Produktions- und Ausgabestellen, Register und Folgebehörden.',
+   daCover:'luecke',
+   blocks:['Ein- und Auszahlung','Event-Verarbeitung für antragslose Verwaltung [Reifegrad niedrig]','Datenaustausch'],
+   fixed:'Außer „Ein- und Auszahlung“ beschreibt die D-Architektur keinen Baustein für Vollzug und Leistungserbringung. Der Wertstrom heißt „Inanspruchnahme“ – er ist aus Kundensicht gedacht.',
+   fhh:'§ 8 Abs. 2 HmbVwDiG: „vollständig“ elektronische Abwicklung schließt den Vollzug ein. § 7 HmbVwDiG: zugelassene Zahlungsverfahren für Gebühren. §§ 48, 49, 49a HmbVwVfG für Korrektur und Erstattung.',
+   interpret:'Wie der Vollzug technisch angebunden wird (Kasse, Druck, Register), regeln Fachrecht und Haushaltsrecht.',
+   open:'Haushalts- und Kassenrecht (Auszahlungsanordnung, Buchung) wurde in diesem Navigator noch nicht geprüft.',
+   itd:'Integrationsmuster zu Kasse, Registern und Produktionsstellen bereitstellen.',
+   authority:'Vollzug als Teil des Sollprozesses planen und messen – nicht beim Bescheid aufhören.',
+   topics:['e2e','zugang','schnittstellen'],projects:['regmo'],sources:['vwdig','hmbvwvfg','da']},
+  {short:'Überwachung & Rechtsbehelf',typed:'s8',
+   title:'8 · Überwachung, Änderung & Rechtsbehelf',subtitle:'Nach der Leistung ist vor der nächsten Interaktion',
+   customer:'Nutzende melden Änderungen, beantragen Verlängerungen oder legen Widerspruch ein.',
+   admin:'Die Behörde überwacht Auflagen und Verwendung, ändert, nimmt zurück oder widerruft (§§ 48, 49 HmbVwVfG) und führt Widerspruchsverfahren.',
+   involved:'Widerspruchsstellen, Gerichte (elektronisches Behördenpostfach), Vollstreckung, Prüfinstanzen.',
+   daCover:'luecke',
+   blocks:['Postfach und Interaktion (G2C)','Statusmonitoring'],
+   fixed:'Rechtsbehelf, Überwachung und Änderung kommen in der D-Architektur nicht als eigene Funktion vor.',
+   fhh:'§§ 48, 49, 49a HmbVwVfG: Rücknahme, Widerruf, Erstattung. § 5 Abs. 4 HmbVwDiG (MUSS): besonderes elektronisches Behördenpostfach – auch für Widerspruchsverfahren. § 12 HmbVwDiG: elektronische Akteneinsicht.',
+   interpret:'Ob ein Widerspruchsverfahren stattfindet, regelt das Fachrecht (es kann ausgeschlossen sein).',
+   open:'Digitale Widerspruchs- und Klageprozesse sind im Navigator noch nicht vertieft.',
+   itd:'Anbindung an Justiz-Kommunikation (Behördenpostfach) zentral bereitstellen.',
+   authority:'Änderungs- und Rechtsbehelfsprozesse in denselben digitalen Vorgang führen.',
+   topics:['verfahren','zugang'],projects:[],sources:['hmbvwvfg','vwdig']},
+  {short:'Abschluss & Archiv',
+   lanes:{kunde:['Zugriff & Auskunft','Bescheide, Daten, Art. 15 DSGVO'],beh:['Verakten & aussondern','Aufbewahren, löschen, anbieten'],bet:['E-Akte & Staatsarchiv','Archivwürdigkeit, Übernahme']},
+   title:'9 · Abschluss, Veraktung & Archivierung',subtitle:'Vom abgeschlossenen Vorgang bis zur Archivierung',
+   customer:'Nutzende greifen auf Bescheide und Daten zu und haben Auskunftsrechte (Art. 15 DSGVO).',
+   admin:'Die Behörde schließt die Akte, überwacht Aufbewahrungsfristen, sondert aus, bietet dem Staatsarchiv an und löscht danach.',
+   involved:'E-Akte-System und Staatsarchiv (Bewertung der Archivwürdigkeit).',
+   daCover:'teil',
+   blocks:['Elektronische Veraktung','Postfach und Interaktion (G2C)'],
+   fixed:'Elektronische Veraktung ist ein Baustein; Aussonderung, Löschung und Archivierung beschreibt die D-Architektur nicht.',
+   fhh:'§ 3 Abs. 1 HmbArchG (MUSS): nicht mehr benötigte Unterlagen fortlaufend aussondern und dem Staatsarchiv anbieten; spätestens 30 Jahre nach Entstehung. Ohne Entscheidung des Archivs binnen 6 Monaten (maschinenlesbar: 4 Monate) dürfen Unterlagen gelöscht werden. § 11 HmbVwDiG: ersetzendes Scannen. Art. 17 DSGVO: Löschung.',
+   interpret:'Aufbewahrungsfristen ergeben sich aus Fach- und Verwaltungsvorschriften.',
+   open:'Die technische Aussonderungsschnittstelle E-Akte/Fachverfahren → Staatsarchiv ist nicht öffentlich beschrieben.',
+   itd:'Aussonderungs- und Löschfunktionen in E-Akte und Fachverfahren standardisieren.',
+   authority:'Aufbewahrung, Löschung und Anbietung als Prozessschritt einplanen – auch im Fachverfahren.',
+   topics:['akte','datenschutz'],projects:['eakte'],sources:['archg','vwdig','dsgvo','da']},
+  {short:'Steuerung & Verbesserung',
+   lanes:{kunde:['Feedback geben','Zufriedenheit, Barrieren melden'],beh:['Kennzahlen auswerten','Durchlaufzeit, Qualität, Kosten'],bet:['Prozessanalyse & Steuerung','HELP, einfach.hamburg, ITD']},
+   title:'10 · Steuerung & Verbesserung',subtitle:'Lernen über den Einzelfall hinaus',
+   customer:'Nutzende geben Feedback und melden Barrieren.',
+   admin:'Die Behörde wertet Durchlaufzeiten, Qualität, Aufwand und Feedback aus und verbessert den Prozess.',
+   involved:'HELP (Prozessanalyse), einfach.hamburg (Vereinfachung), ITD (zentrale Steuerung).',
+   daCover:'teil',
+   blocks:['Feedback und Nutzungsanalyse','Statusmonitoring'],
+   fixed:'Feedback und Nutzungsanalyse ist ein Baustein – bezogen auf die Nutzung digitaler Leistungen, nicht auf interne Prozesskennzahlen.',
+   fhh:'§ 2 HmbBITVO (MUSS): Feedback zu Barrieren binnen zwei Wochen beantworten. Digitalstrategie: Prozessanalyse über HELP verstetigt, Geschäftsprozessmanagement.',
+   interpret:'Welche Kennzahlen erhoben werden, ist nicht vorgegeben; Datenerhebung braucht eine Rechtsgrundlage.',
+   open:'Ein verbindliches FHH-Kennzahlenset für Ende-zu-Ende-Prozesse ist nicht belegt.',
+   itd:'Gemeinsame Kennzahlen und Auswertungen anbieten.',
+   authority:'E2E-Kennzahlen inklusive Vollzug erheben, nicht nur Online-Nutzung.',
+   topics:['barrierefreiheit','e2e','datenschutz'],projects:['help','einfach'],sources:['bitvo','ds2025','help','einfach','da']}
+];
+const laneOf = (s,key) => s.typed ? LTYPES[activeType][s.typed][key] : s.lanes[key];
+
+/* ---------- Themen ---------- */
+const ROLES = ['ITD','Behörde','Projekt / Dienstleister','Betrieb'];
+const BINDING = {
+  muss:{cls:'b-must',short:'MUSS'}, bedingt:{cls:'b-cond',short:'MUSS – bedingt'},
+  soll:{cls:'b-should',short:'SOLL'}, offen:{cls:'b-open',short:'UNKLAR'}
+};
+const OBL = {must:'b-must',cond:'b-cond',should:'b-should',can:'b-can',unclear:'b-open'};
+
+const data = [
+  {
+    id:'barrierefreiheit', title:'Digitale Barrierefreiheit', area:'Frontend / Onlinedienst',
+    binding:'muss', bindingLabel:'MUSS – HmbGGbM / HmbBITVO', gap:false,
+    summary:'Websites, mobile Anwendungen und grafische Oberflächen öffentlicher Stellen müssen barrierefrei sein – inklusive Erklärung zur Barrierefreiheit und Feedback-Möglichkeit.',
+    mandatory:[
+      'Barrierefreie Gestaltung nach BITV 2.0; wo diese nichts regelt, nach dem Stand der Technik (§ 1 HmbBITVO).',
+      'Erklärung zur Barrierefreiheit: barrierefrei, maschinenlesbar, von jeder Seite erreichbar, mit Pflichtinhalten (nicht barrierefreie Teile und Gründe, Kontaktmöglichkeit, Hinweis auf Schlichtung) – § 2 Abs. 1–2 HmbBITVO.',
+      'Antwort auf Meldungen innerhalb von zwei Wochen (§ 2 Abs. 3) und Aktualisierung jährlich sowie bei wesentlichen Änderungen (§ 2 Abs. 6).',
+      'Behördeninformationen im Netz barrierefrei bereitstellen (§ 4 HmbVwDiG).'
+    ],
+    discretion:'Wahl von Design-System, Komponenten und Werkzeugen; die Bewertung darf durch Dritte oder durch die Stelle selbst erfolgen (§ 2 Abs. 5 HmbBITVO).',
+    basisOpen:'Ob ein FHH-Design-System oder ein zentrales Prüfverfahren verbindlich ist, ist nicht öffentlich belegt.',
+    how:[
+      ['Anforderungen früh einplanen','Barrierefreiheit in UX, Design-System, Fachkonzept und Beschaffung verankern – nicht erst vor Go-Live prüfen.'],
+      ['Bewerten und testen','Prüfung gegen BITV 2.0 (verweist auf die harmonisierte Norm EN 301 549): Tastatur, Fokus, Kontraste, Screenreader, Formulare.'],
+      ['Erklärung veröffentlichen','Erklärung zur Barrierefreiheit von jeder Seite verlinken; Ergebnis der tatsächlichen Bewertung dokumentieren.'],
+      ['Feedback betreiben','Barrierefreien Kontaktkanal anbieten und Meldungen binnen zwei Wochen beantworten.'],
+      ['Mängel nachhalten','Abweichungen mit Verantwortlichen, Frist und Re-Test dokumentieren; Erklärung jährlich aktualisieren.']
+    ],
+    roles:[
+      {role:'ITD',task:'Überwachung, zentrale Prüfung/Klärung und stadtweite Hilfen',evidence:'Überwachungsbericht / Mustererklärung / zentrale Vorgaben',obligation:'MUSS (Überwachungsstelle) · SOLL (Hilfen)',badge:'must',
+       steps:['Stichproben jährlich und anlassbezogen prüfen (§ 3 HmbBITVO)','Mustererklärung veröffentlichen (§ 2 Abs. 4 HmbBITVO)','zentrale Prüfung, Klärung und ggf. Vorgaben für die Stadt (Digitalstrategie 2025)','Design-/Komponentenstandards bereitstellen'],
+       when:'laufend; bei neuen zentralen Komponenten',src:['bitvo','ds2025'],
+       note:'Die Überwachungsstelle ist „bei der für die Informationstechnik zuständigen Behörde“ eingerichtet (§ 3 HmbBITVO). Dass dies organisatorisch ITD ist, intern bestätigen.'},
+      {role:'Behörde',task:'Barrierefreiheit des eigenen Angebots sicherstellen',evidence:'Bewertungsbericht / Erklärung zur Barrierefreiheit / Mängelliste',obligation:'MUSS',badge:'must',
+       steps:['Anforderungen in Fachkonzept und Vergabe aufnehmen','tatsächliche Bewertung durchführen (lassen)','Erklärung veröffentlichen und jährlich aktualisieren','Meldungen binnen zwei Wochen beantworten','Mängel vor Freigabe beheben oder in der Erklärung begründen'],
+       when:'vor Go-Live, jährlich, bei wesentlichen Änderungen',src:['bitvo','bitv','vwdig'],
+       note:'Gilt im Anwendungsbereich des § 10 HmbGGbM.'},
+      {role:'Projekt / Dienstleister',task:'barrierefreie technische Umsetzung liefern',evidence:'Testfälle / Prüfprotokoll / Fehlerbehebung',obligation:'MUSS, soweit vertraglich vorgegeben',badge:'cond',
+       steps:['Anforderungen implementieren','automatisierte und manuelle Tests inkl. assistiver Technik','Fehler priorisieren und beheben','Nachweis an Auftraggeber übergeben'],
+       when:'während Entwicklung und vor Abnahme',src:['bitv'],
+       note:'Die Pflicht des Dienstleisters ergibt sich aus Vertrag und Leistungsbeschreibung.'}
+    ],
+    scale:['Standard-UI','Erweiterte Interaktion','Komplexe Anwendung'],
+    consequences:[
+      {criterion:'Tastaturbedienung',low:'Standardkomponenten vollständig per Tastatur nutzbar.',mid:'Fokuslogik und Sonderkomponenten anpassen.',high:'Eigene Tastatur- und Fokuskonzepte, intensivere Tests.'},
+      {criterion:'Screenreader / Semantik',low:'Semantisch saubere Standard-UI reicht.',mid:'Dynamische Inhalte brauchen zusätzliche ARIA-/Strukturmaßnahmen.',high:'Detaillierte Accessibility-Logik, wiederholte Tests mit assistiver Technik.'},
+      {criterion:'Visuelle Wahrnehmbarkeit',low:'Design-System erfüllt Kontrastvorgaben.',mid:'Eigene Komponenten und Zustände nachprüfen.',high:'Visualisierungen brauchen Alternativdarstellungen.'}
+    ],
+    impacts:[
+      {level:'Standard-UI',arch:'barrierefreie Standardkomponenten',cost:[1,'geringe Mehrkosten'],time:[1,'geringe Zusatzlaufzeit'],proof:[1,'Standardbewertung, Erklärung']},
+      {level:'Erweiterte Interaktion',arch:'zusätzliche Frontend-Anpassungen',cost:[2,'höhere Entwicklungs- und Testkosten'],time:[2,'mehr UX- und Testzeit'],proof:[2,'erweiterte manuelle Tests']},
+      {level:'Komplexe Anwendung',arch:'individuelle Accessibility-Lösungen',cost:[3,'deutlich höhere Entwicklungs- und Wartungskosten'],time:[3,'längere Umsetzung und Nachbesserung'],proof:[3,'umfangreiche Berichte, Re-Tests']}
+    ],
+    open:'Ist die Überwachungsstelle organisatorisch ITD? Welche FHH-Design-Systeme oder Qualitätsgates sind für das Vorhaben verbindlich?',
+    sources:['bitvo','bitv','rl2102','vwdig','ds2025']
+  },
+  {
+    id:'datenschutz', title:'Datenschutz', area:'Gesamtes Fachverfahren',
+    binding:'muss', bindingLabel:'MUSS – DSGVO / HmbDSG', gap:false,
+    summary:'Die Verarbeitung personenbezogener Daten muss für den konkreten Zweck rechtmäßig, datensparsam und angemessen geschützt sein.',
+    mandatory:[
+      'Grundsätze und Rechtmäßigkeit der Verarbeitung (Art. 5, 6 DSGVO), ergänzend HmbDSG und Fachrecht.',
+      'Datenschutz durch Technikgestaltung und datenschutzfreundliche Voreinstellungen (Art. 25 DSGVO).',
+      'Verzeichnis von Verarbeitungstätigkeiten (Art. 30) und Sicherheit der Verarbeitung (Art. 32).',
+      'Datenschutz-Folgenabschätzung bei voraussichtlich hohem Risiko (Art. 35); Auftragsverarbeitung vertraglich regeln (Art. 28).'
+    ],
+    discretion:'Auswahl geeigneter technischer und organisatorischer Maßnahmen, sofern das risikoangemessene Schutzniveau nachweisbar erreicht wird.',
+    basisOpen:'FHH-interne technische Mindeststandards (z. B. Lösch- und Protokollierungsvorgaben) sind nicht öffentlich belegt.',
+    how:[
+      ['Datenflüsse modellieren','Erfassen, welche personenbezogenen Daten wo erhoben, verarbeitet, übermittelt und gespeichert werden.'],
+      ['Rechtsgrundlage zuordnen','Jeden wesentlichen Verarbeitungsschritt einer Rechtsgrundlage und einem Zweck zuordnen.'],
+      ['Risiko bewerten','Schwellwertprüfung; bei voraussichtlich hohem Risiko DSFA durchführen.'],
+      ['Schutzmaßnahmen festlegen','Berechtigungen, Löschung, Protokollierung, Verschlüsselung und Aufbewahrung festlegen.'],
+      ['Änderungen neu bewerten','Neue Schnittstellen, Datennutzungen, KI-Funktionen oder Anbieter als Änderungsereignis behandeln.']
+    ],
+    roles:[
+      {role:'ITD',task:'zentrale Prüfung, Klärung und Leitplanken',evidence:'Muster / Standards / Plattformvorgaben',obligation:'SOLL – Rolle in Digitalstrategie belegt',badge:'should',
+       steps:['zentrale Prüfung und Klärung übergreifender Datenschutzfragen','wiederverwendbare Privacy-by-Design-Vorgaben definieren','zentrale Plattformdienste datenschutzgerecht gestalten'],
+       when:'bei Plattformdesign und zentralen Services',src:['ds2025'],
+       note:'Laut Digitalstrategie 2025 ist ITD „für übergreifende Themen wie Datenschutz … als zentraler Anbieter etabliert“. Die Verantwortung für die konkrete Verarbeitung bleibt beim Verantwortlichen.'},
+      {role:'Behörde',task:'Zweck, Rechtsgrundlage und Erforderlichkeit verantworten (Verantwortlicher)',evidence:'Verarbeitungsverzeichnis / DSFA / Datenschutzfreigabe',obligation:'MUSS',badge:'must',
+       steps:['Zwecke festlegen','Rechtsgrundlage prüfen','Datenminimierung und Löschfristen definieren','DSFA-Bedarf prüfen','Auftragsverarbeitung vertraglich regeln'],
+       when:'vor Einführung und bei wesentlichen Änderungen',src:['dsgvo','hmbdsg'],
+       note:'Zusätzlich immer das einschlägige Fachrecht prüfen.'},
+      {role:'Projekt / Dienstleister',task:'Privacy by Design technisch umsetzen',evidence:'Berechtigungs- und Löschkonzept',obligation:'MUSS (als Auftragsverarbeiter bzw. vertraglich)',badge:'must',
+       steps:['Rollen/Berechtigungen implementieren','Lösch- und Sperrmechanismen umsetzen','datenschutzfreundliche Voreinstellungen'],
+       when:'während der Umsetzung',src:['dsgvo'],note:'Konkrete Maßnahmen hängen von Verarbeitung und Risiko ab.'},
+      {role:'Betrieb',task:'technische und organisatorische Maßnahmen betreiben',evidence:'Protokollierung / Zugriffskontrolle / Nachweise',obligation:'MUSS (Art. 32 DSGVO)',badge:'must',
+       steps:['Protokollierung passend konfigurieren','Zugriffe administrieren und überprüfen','Datenschutzvorfälle melden und behandeln'],
+       when:'laufend im Betrieb',src:['dsgvo'],note:'Meldepflichten bei Datenschutzverletzungen beachten.'}
+    ],
+    scale:['Niedriges Risiko','Erhöhtes Risiko','Hohes Risiko'],
+    consequences:[
+      {criterion:'Risiko der Verarbeitung',low:'Auch bei niedrigem Risiko sind angemessene Maßnahmen erforderlich.',mid:'Maßnahmen müssen stärker bzw. spezifischer ausfallen.',high:'Vorab DSFA nach Art. 35 DSGVO erforderlich.'},
+      {criterion:'Art / Umfang / Umstände / Zweck',low:'Faktoren gemeinsam bewerten; Datenmenge allein entscheidet nicht.',mid:'Sensible Daten, neue Technologien oder große Reichweite erhöhen das Risiko.',high:'Mehrere Risikofaktoren zusammen führen zu deutlich höheren Anforderungen.'}
+    ],
+    impacts:[
+      {level:'Niedriges Risiko',arch:'risikoadäquate Standardmaßnahmen',cost:[1,'geringe Zusatzkosten'],time:[1,'geringe Zusatzlaufzeit'],proof:[1,'Verzeichnis, Angemessenheitsnachweis']},
+      {level:'Erhöhtes Risiko',arch:'zusätzliche Schutz- und Trennmechanismen',cost:[2,'höhere Entwicklungs-/Betriebskosten'],time:[2,'mehr Abstimmung und Test'],proof:[2,'erweiterte Dokumentation']},
+      {level:'Hohes Risiko',arch:'stark abgesicherte Verarbeitung',cost:[3,'deutlich höhere Kosten'],time:[3,'längere Freigabe'],proof:[3,'DSFA und umfangreiche Nachweise']}
+    ],
+    open:'Welche fachrechtlichen Vorgaben gelten zusätzlich, und welche FHH-internen Standards konkretisieren die technische Umsetzung?',
+    sources:['dsgvo','hmbdsg','ds2025']
+  },
+  {
+    id:'infosec', title:'Informationssicherheit', area:'Fachverfahren / Betrieb',
+    binding:'offen', bindingLabel:'Strategie belegt – verbindliche FHH-Regel fehlt', gap:true,
+    summary:'Schutzbedarf und Maßnahmen sind risikobasiert festzulegen. Öffentlich belegt sind strategische Festlegungen; eine verbindliche FHH-Sicherheitsrichtlinie ist nicht öffentlich auffindbar.',
+    mandatory:[
+      'Bei personenbezogenen Daten: Sicherheit der Verarbeitung nach Art. 32 DSGVO (gesetzlich).',
+      'Digitalstrategie 2025 (Senat): Verwaltung und regelhaft beauftragte IT-Dienstleister betreiben ein IT-Notfallmanagement in Anlehnung an BSI 200-4; BSI-Vorgaben werden „in an die Hamburger Gegebenheiten angepasster Art und Weise“ umgesetzt.',
+      'D-Architektur-Prinzipien Zero-Trust und DevSecOps (Weisungscharakter; Verbindlichkeit wird noch im Governance-Konzept ausgestaltet).'
+    ],
+    discretion:'Konkrete Maßnahmen folgen aus Schutzbedarf und Risiko, nicht allein aus der Kategorie (normal, hoch, sehr hoch).',
+    basisOpen:'Ein eigenes Hamburger IT-Sicherheitsgesetz ist laut Digitalstrategie geplant – Stand nicht bestätigt. Die interne Informationssicherheitsleitlinie der FHH ist nicht öffentlich; für Vorhaben intern anfordern.',
+    how:[
+      ['Schutzbedarf bestimmen','Prozesse, Daten und Komponenten nach Vertraulichkeit, Integrität und Verfügbarkeit bewerten.'],
+      ['Risiken analysieren','Bedrohungen, Abhängigkeiten und Ausfallfolgen erfassen.'],
+      ['Maßnahmen umsetzen','Maßnahmen aus Risiko und geltenden FHH-Vorgaben ableiten; Zero-Trust-Fähigkeit berücksichtigen.'],
+      ['Notfallvorsorge','IT-Notfallmanagement in Anlehnung an BSI 200-4 einplanen.'],
+      ['Wirksamkeit nachweisen','Prüfungen, Betriebskontrollen und offene Risiken dokumentieren.']
+    ],
+    roles:[
+      {role:'ITD',task:'Sicherheitsleitplanken und Methodik steuern',evidence:'Leitlinie / Rahmenwerk',obligation:'UNKLAR – interne Regelung belegen',badge:'unclear',
+       steps:['verbindliche Mindestmethodik festlegen','zentrale Sicherheitsanforderungen pflegen','Ausnahmen und Eskalationswege definieren'],
+       when:'laufend',src:['ds2025','cyber'],note:'Keine Verbindlichkeit allein aus dem BSI-Grundschutz ableiten.'},
+      {role:'Behörde',task:'Schutzbedarf und Restrisiken verantworten',evidence:'Schutzbedarfsfeststellung / Risikoentscheidung',obligation:'MUSS bei personenbezogenen Daten (Art. 32 DSGVO), sonst nach interner Regel',badge:'cond',
+       steps:['Schutzobjekte bestimmen','Schutzbedarf festlegen','Risiken bewerten','Restrisiken entscheiden oder eskalieren','Anforderungen an Projekt und Betrieb übergeben'],
+       when:'vor Einführung und bei wesentlichen Änderungen',src:['dsgvo','bsi'],note:'Interne FHH-Sicherheitsvorgaben ergänzend heranziehen.'},
+      {role:'Projekt / Dienstleister',task:'Security by Design umsetzen',evidence:'Sicherheitskonzept / Testergebnisse',obligation:'MUSS, soweit vertraglich vorgegeben',badge:'cond',
+       steps:['Sicherheitsanforderungen implementieren','automatisierte Sicherheitsprüfungen (DevSecOps)','Schwachstellen vor Abnahme beheben'],
+       when:'während der Umsetzung',src:['da'],note:'DevSecOps ist ein D-Architektur-Prinzip; Verbindlichkeit im Vertrag festlegen.'},
+      {role:'Betrieb',task:'Maßnahmen betreiben und nachweisen',evidence:'Monitoring / Notfallübungen / Audit',obligation:'SOLL – laut Digitalstrategie (Notfallmanagement)',badge:'should',
+       steps:['Monitoring und Logging betreiben','Schwachstellen und Vorfälle behandeln','IT-Notfallmanagement nach BSI 200-4 betreiben','Wirksamkeitsnachweise liefern'],
+       when:'laufend',src:['ds2025','bsi'],note:'Die Strategie beschreibt Vorhaben; die vertragliche Pflicht ergibt sich aus dem Betriebsvertrag.'}
+    ],
+    scale:['Normal','Hoch','Sehr hoch'],
+    consequences:[
+      {criterion:'Verfügbarkeit',low:'Standardbetrieb, übliche Backup-/Restore-Vorsorge.',mid:'ggf. Redundanz, engere Wiederanlaufziele, Restore-Tests – risikobasiert festlegen.',high:'ggf. hochverfügbare Architektur; konkrete RTO/RPO nicht automatisch aus der Kategorie ableiten.'},
+      {criterion:'Vertraulichkeit',low:'Standardberechtigungen und Basisschutz.',mid:'ggf. stärkere Zugriffstrennung und Verschlüsselung.',high:'ggf. strenge Zugriffs-, Schlüssel- und Administrationskontrollen.'},
+      {criterion:'Integrität',low:'Standardprotokollierung, Änderungsnachvollziehbarkeit.',mid:'ggf. erweiterte Protokollierung, Freigabemechanismen.',high:'ggf. Maßnahmen gegen unbemerkte Änderungen, intensive Prüfungen.'}
+    ],
+    impacts:[
+      {level:'Normal',arch:'Standardarchitektur',cost:[1,'niedrigere Betriebskosten'],time:[1,'geringe Zusatzlaufzeit'],proof:[1,'Standardnachweise']},
+      {level:'Hoch',arch:'zusätzliche Maßnahmen',cost:[2,'höhere Projekt- und Betriebskosten'],time:[2,'mehr Konzeption und Test'],proof:[2,'erweiterte Nachweise']},
+      {level:'Sehr hoch',arch:'hochverfügbar bzw. besonders abgesichert',cost:[3,'deutlich höhere Kosten'],time:[3,'längere Umsetzung'],proof:[3,'umfangreiche Nachweise und Übungen']}
+    ],
+    open:'Interne FHH-Sicherheitsleitlinie anfordern; Stand des geplanten Hamburger IT-Sicherheitsgesetzes und der Cybersicherheitsstrategie (Drs. 23/383) prüfen; NIS-2-Bezug klären.',
+    sources:['ds2025','cyber','bsi','dsgvo','da']
+  },
+  {
+    id:'souveraenitaet', title:'Digitale Souveränität / IT-Betrieb', area:'Betriebsmodell / Vergabe',
+    binding:'bedingt', bindingLabel:'MUSS – nur im Anwendungsbereich § 3 HmbITSG', gap:false,
+    summary:'Der IT-Betrieb für die in der Anlage zum HmbITSG genannten, für hoheitliche Aufgaben unverzichtbaren Fachverfahren darf nur an öffentlich-rechtliche Inhouse-Partner vergeben werden.',
+    mandatory:[
+      '§ 3 HmbITSG: Aufträge für den IT-Betrieb von Fachverfahren/Fachanwendungen der Anlage, deren Einsatz für hoheitliche Aufgaben unverzichtbar ist, gehen ausschließlich an juristische Personen des öffentlichen Rechts mit Inhouse-Voraussetzungen nach § 108 GWB – soweit nicht staatliche Stellen selbst betreiben.',
+      '„IT-Betrieb“ umfasst Rechenzentrumsinfrastruktur samt Räumen, Geräten, systemnaher Software und Dienstleistungen (§ 2 Nr. 2 HmbITSG).',
+      'Zur Fachanwendung zählen auch Unterstützungssoftware und zentrale Services, die für die Funktion zwingend notwendig sind (§ 2 Nr. 1).'
+    ],
+    discretion:'Ausnahme: Betrieb im Rahmen von Kooperationen mit anderen Ländern, dem Bund oder der EU (§ 3 S. 2). Außerhalb der Anlage gilt allgemeines Vergaberecht. D-Architektur-Prinzip „Made in EU first“ (Verbindlichkeit noch auszugestalten).',
+    basisOpen:'FHH-Auslegungshilfen zur Abgrenzung der Anlage-Bereiche und „zwingend notwendiger“ Komponenten sind nicht öffentlich belegt.',
+    how:[
+      ['Anwendungsbereich prüfen','Liegt das Fachverfahren in einem Bereich der Anlage (z. B. Justiz, Innere Sicherheit, Wahlen, Statistik, Schule, Personal) und ist es für hoheitliche Aufgaben unverzichtbar?'],
+      ['Betriebsbestandteile zerlegen','Rechenzentrum, systemnahe Software, zentrale Services und Support getrennt betrachten.'],
+      ['Betreiber prüfen','Eigenbetrieb oder Inhouse-fähige juristische Person des öffentlichen Rechts (§ 108 GWB)?'],
+      ['Ausnahme prüfen','Liegt eine Kooperation mit Bund, Ländern oder EU vor (§ 3 S. 2)?'],
+      ['Entscheidung dokumentieren','Bewertung, Ausnahmen und Begründung nachvollziehbar festhalten.']
+    ],
+    roles:[
+      {role:'ITD',task:'Auslegungsfragen bündeln und Betriebsmodelle beschreiben',evidence:'Auslegungshilfe / Referenzarchitektur',obligation:'UNKLAR – Zuständigkeit nicht belegt',badge:'unclear',
+       steps:['wiederkehrende Auslegungsfragen dokumentieren','zulässige Betriebsmodelle beschreiben','offene Rechtsfragen eskalieren'],
+       when:'bei neuen Betriebsmodellen und Plattformentscheidungen',src:['itsg'],note:'Eine zentrale ITD-Zuständigkeit nicht ohne interne Quelle behaupten.'},
+      {role:'Behörde',task:'Anwendungsbereich prüfen und zulässig vergeben',evidence:'Verfahrensbeschreibung / Abhängigkeitsmodell / Vergabevermerk',obligation:'MUSS im Anwendungsbereich',badge:'cond',
+       steps:['Fachverfahren gegen Anlage HmbITSG prüfen','zwingend notwendige Komponenten identifizieren','Betreiber und Vergabeweg festlegen','Vergabeunterlagen entsprechend zuschneiden','Ausnahmen begründen'],
+       when:'vor Beschaffung, Vergabe oder wesentlicher Betriebsänderung',src:['itsg'],note:'Nur im Anwendungsbereich des § 3 als MUSS behandeln.'},
+      {role:'Betrieb',task:'Betrieb gesetzeskonform erbringen',evidence:'Betriebsvertrag / Leistungsbeschreibung',obligation:'MUSS im Anwendungsbereich',badge:'cond',
+       steps:['Inhouse-Voraussetzungen erfüllen','Unterauftragnehmer gegen § 3 prüfen','Abhängigkeiten transparent machen'],
+       when:'vor Vertragsschluss und laufend',src:['itsg'],note:'Unteraufträge an private Dritte kritisch prüfen (rechtliche Einzelfallbewertung).'}
+    ],
+    scale:['Geringe Abweichung','Mittlere Abweichung','Hohe Abweichung'],
+    consequences:[
+      {criterion:'Betriebsmodell',low:'Betrieb bereits bei öffentlichem Inhouse-Partner.',mid:'Teilkomponenten müssen migriert oder neu vergeben werden.',high:'Grundlegende Neuordnung des Betriebs, ggf. Migration.'},
+      {criterion:'Abhängigkeiten',low:'Wenige externe Abhängigkeiten.',mid:'Zwingend notwendige Basisdienste einzeln bewerten.',high:'Komplexe Lieferketten erhöhen Prüf-, Vertrags- und Migrationsaufwand.'}
+    ],
+    impacts:[
+      {level:'Geringe Abweichung',arch:'bestehende Architektur nutzbar',cost:[1,'geringe Mehrkosten'],time:[1,'geringe Verzögerung'],proof:[1,'Vergabevermerk']},
+      {level:'Mittlere Abweichung',arch:'Anpassung von Komponenten oder Betriebsgrenzen',cost:[2,'zusätzliche Projekt- und Betriebskosten'],time:[2,'Abstimmung und Migration'],proof:[2,'detaillierte Betriebsentscheidung']},
+      {level:'Hohe Abweichung',arch:'Neuordnung des Betriebs',cost:[3,'hohe Migrationskosten'],time:[3,'erhebliche Verlängerung'],proof:[3,'umfangreiche rechtliche Dokumentation']}
+    ],
+    open:'Welche Komponenten gelten im konkreten Fall als „zwingend notwendig“? Gibt es FHH-Auslegungshilfen zur Anlage?',
+    sources:['itsg','da']
+  },
+  {
+    id:'schnittstellen', title:'Schnittstellen / Fachstandards', area:'Integration',
+    binding:'bedingt', bindingLabel:'MUSS – abhängig vom konkreten Standard', gap:false,
+    summary:'XÖV ist ein Rahmen; verbindlich sind einzelne Standards mit Beschluss- oder Rechtsgrundlage, Geltungsbereich und ggf. Frist.',
+    mandatory:[
+      'Verbindlich beschlossene Standards innerhalb ihres Geltungsbereichs, z. B. XBau und XPlanung (IT-PLR-Beschluss 2017/37): für neue oder wesentlich überarbeitete IT-Verfahren sofort, für übrige spätestens fünf Jahre nach Beschluss.',
+      'Gesicherte Kommunikation bei behördenübergreifender Datenübermittlung und beim Datenabruf (§ 8 Abs. 1 S. 3 HmbVwDiG).'
+    ],
+    discretion:'Wo kein verbindlicher Standard existiert, ist die technische Lösung frei – das D-Architektur-Prinzip API-first und die Nationale Architekturrichtlinie (TV-02: Schnittstellen standardisiert) geben die Richtung vor.',
+    basisOpen:'Die IT-Behörde ist befugt, Übermittlungsstandards per Verwaltungsvorschrift festzulegen (§ 8 Abs. 1 S. 2 HmbVwDiG) – ob eine solche Vorschrift existiert, ist nicht öffentlich belegt. Eine verbindliche XZuFi-Pflicht konnte nicht bestätigt werden.',
+    how:[
+      ['Austausch identifizieren','Externe Stellen, Register und Fachverfahren erfassen.'],
+      ['Standard suchen','Je Austausch in XRepository und den IT-PLR-Beschlüssen nach einschlägigen Standards suchen.'],
+      ['Verbindlichkeit prüfen','Nicht aus dem Namen ableiten, sondern Beschluss- bzw. Rechtsgrundlage, Geltungsbereich und Frist prüfen.'],
+      ['API-first umsetzen','Schnittstellen vor der Anwendung spezifizieren (z. B. OpenAPI), versionieren und dokumentieren.'],
+      ['Konformität testen','Schema, Transport, Fehlerbehandlung und Versionierung gegen den Standard testen.']
+    ],
+    roles:[
+      {role:'ITD',task:'Übermittlungsstandards und Integrationsmuster festlegen',evidence:'Verwaltungsvorschrift / API-Prinzipien',obligation:'KANN – Befugnis nach § 8 Abs. 1 S. 2 HmbVwDiG',badge:'can',
+       steps:['Standards für Übermittlung elektronischer Akten/Dokumente festlegen','zulässige Integrationsmuster dokumentieren','zentrale Schnittstellenverzeichnisse pflegen'],
+       when:'bei Architekturvorgaben',src:['vwdig','da'],note:'„Die für Informationstechnik zuständige Behörde“ – Zuordnung zu ITD intern bestätigen.'},
+      {role:'Behörde',task:'Austauschbeziehungen und Pflichtstandards identifizieren',evidence:'Schnittstellenkatalog / Fachkonzept',obligation:'MUSS, wenn ein Standard verbindlich ist',badge:'cond',
+       steps:['Austauschbeziehungen erfassen','einschlägige Standards je Beziehung prüfen','verbindliche Standards in Anforderungen übernehmen'],
+       when:'vor Beschaffung/Entwicklung',src:['itplr','xbau','xrepo'],note:'Ohne konkreten Standard keine pauschale Verpflichtung.'},
+      {role:'Projekt / Dienstleister',task:'technische Konformität herstellen',evidence:'Spezifikation / Konformitätstest',obligation:'MUSS, wenn der Standard verbindlich vorgegeben ist',badge:'cond',
+       steps:['Version und Profil festlegen','Schema und Transport implementieren','Fehlerfälle und Versionierung abdecken','Konformität testen'],
+       when:'bei Umsetzung und vor produktiver Anbindung',src:['xrepo'],note:'Pflichtgrad folgt dem konkreten Standard.'}
+    ],
+    scale:['Kein verbindlicher Standard','Empfohlener Standard','Verbindlicher Standard'],
+    consequences:[
+      {criterion:'Standardlage',low:'Lokale Lösung zulässig, soweit keine andere Vorgabe entgegensteht.',mid:'Abweichung begründen.',high:'Schema, Version, Transport und Konformität einhalten.'},
+      {criterion:'Integrationskomplexität',low:'Punkt-zu-Punkt mit begrenztem Datenumfang.',mid:'Mehrere Systeme, Versionen, Transformationen.',high:'Föderale, mehrseitige Integration.'},
+      {criterion:'Änderungsdynamik',low:'Seltene Änderungen.',mid:'Regelmäßige Versionswechsel.',high:'Häufige Schemaänderungen mit hohem Testbedarf.'}
+    ],
+    impacts:[
+      {level:'Kein verbindlicher Standard',arch:'mehr Gestaltungsspielraum',cost:[1,'kurzfristig niedrig, langfristig ggf. höher'],time:[1,'schneller umsetzbar'],proof:[1,'lokale Schnittstellendoku']},
+      {level:'Empfohlener Standard',arch:'Orientierung an Referenzmustern',cost:[2,'moderater Mehraufwand'],time:[2,'zusätzliche Abstimmung'],proof:[2,'Begründung bei Abweichung']},
+      {level:'Verbindlicher Standard',arch:'Standardkonformität sicherstellen',cost:[3,'höhere Entwicklungs-/Testkosten'],time:[3,'Konformitäts- und Integrationstests'],proof:[3,'Konformitätsnachweis']}
+    ],
+    open:'Einschlägigen Standard, Geltungsbereich, Verbindlichkeitsgrundlage und Frist ermitteln. Existiert eine FHH-Verwaltungsvorschrift nach § 8 Abs. 1 S. 2 HmbVwDiG?',
+    sources:['xbau','itplr','xrepo','vwdig','da','xzufi']
+  },
+  {
+    id:'e2e', title:'Ende-zu-Ende-Digitalisierung / Fachverfahren', area:'Fachverfahren / Prozess',
+    binding:'muss', bindingLabel:'MUSS – § 8 Abs. 2 HmbVwDiG (mit Ausnahmen)', gap:false,
+    summary:'Bei Einführung neuer IT-Lösungen sind elektronisch angebotene Verwaltungsleistungen vollständig elektronisch abzuwickeln – gesetzlich geregelt und durch die Digitalstrategie 2025 bekräftigt.',
+    mandatory:[
+      '§ 8 Abs. 2 S. 1 HmbVwDiG: Bei Einführung neuer IT-Lösungen sind Leistungen, soweit elektronisch angeboten, vollständig („Ende-zu-Ende“) elektronisch abzuwickeln.',
+      'Digitalstrategie 2025 (Senat): Bei Neubeschaffung oder grundlegender Änderung von Fachverfahren muss die Möglichkeit eines vollständig digitalen Prozesses in der Software bestehen; Fachverfahren müssen den kommenden Softwaregrundsätzen entsprechen.',
+      'SOLL: Systeme sollen medienbruchfreien Austausch mit Behörden und Gerichten ermöglichen (§ 8 Abs. 2 S. 2) und für Mitnutzung durch Bund, Länder und Kommunen geeignet sein (§ 8 Abs. 4).'
+    ],
+    discretion:'Ausnahmen nach § 8 Abs. 3: entgegenstehende Rechtsvorschriften, technische Unmöglichkeit oder Senatsbeschluss im Einzelfall (Unwirtschaftlichkeit, sonstige wichtige Gründe). Die Lösung (Fachverfahren, Low-Code MODUL-F, andere) ist frei wählbar.',
+    basisOpen:'Die Softwaregrundsätze sollen laut Digitalstrategie erst in einer kommenden IT-Strategie definiert werden – aktueller Stand nicht belegt.',
+    how:[
+      ['Prozess E2E modellieren','Kunden- und Verwaltungssicht gemeinsam betrachten – vom Antrag bis zur Veraktung.'],
+      ['Medienbrüche markieren','Papier, E-Mail, Excel, manuelle Übertragung und Doppelerfassung sichtbar machen.'],
+      ['Ausnahmen prüfen','Verbleibende Medienbrüche nur mit Ausnahmegrund nach § 8 Abs. 3 HmbVwDiG.'],
+      ['Automatisierung bestimmen','Datenübernahme, Prüfungen, Statuswechsel und Bescheiderzeugung identifizieren.'],
+      ['Nachnutzbarkeit sichern','Lösung für Mitnutzung durch andere Verwaltungen geeignet gestalten (§ 8 Abs. 4).']
+    ],
+    roles:[
+      {role:'ITD',task:'Softwaregrundsätze und zentrale Komponenten bereitstellen',evidence:'Softwaregrundsätze / Referenzmodell / Verwaltungsvorschrift',obligation:'KANN (§ 14 HmbVwDiG) · SOLL (Strategie)',badge:'can',
+       steps:['Softwaregrundsätze ausarbeiten (Digitalstrategie)','zentrale Infrastrukturen und Komponenten bereitstellen (§ 14 Abs. 1)','Nutzungsregeln per Verwaltungsvorschrift festlegen (§ 14 Abs. 2)','Lücken zwischen Strategie und Standard markieren'],
+       when:'bei Fortschreibung der IT-Strategie und zentraler Komponenten',src:['vwdig','ds2025'],note:'§ 14 nennt „die für Informationstechnik zuständige Behörde“.'},
+      {role:'Behörde',task:'E2E-Abwicklung sicherstellen',evidence:'Sollprozess / Ausnahmebegründung / Maßnahmenplan',obligation:'MUSS bei neuen IT-Lösungen',badge:'must',
+       steps:['Ist-Prozess modellieren','Sollprozess E2E festlegen','Ausnahmen nach § 8 Abs. 3 begründen bzw. Senatsbeschluss einholen','Maßnahmen priorisieren'],
+       when:'bei Neueinführung, Neubeschaffung oder grundlegender Änderung',src:['vwdig','ds2025'],note:'Gilt für Behörden im Sinne von § 2 Abs. 1 S. 1 HmbVwDiG.'},
+      {role:'Projekt / Dienstleister',task:'Sollprozess technisch umsetzen',evidence:'Lösungskonzept / Abnahme',obligation:'MUSS, abgeleitet aus Auftrag',badge:'cond',
+       steps:['Sollprozess in Anforderungen übersetzen','Komponenten und Schnittstellen zuordnen','manuelle Restschritte begründen','Mitnutzbarkeit berücksichtigen'],
+       when:'während Konzeption und Umsetzung',src:['vwdig'],note:'Konkrete Pflicht ergibt sich aus Projektauftrag und Vertrag.'}
+    ],
+    scale:['Geringe E2E-Tiefe','Mittlere E2E-Tiefe','Hohe E2E-Tiefe'],
+    consequences:[
+      {criterion:'Medienbruchfreiheit',low:'Einzelne manuelle Schritte bleiben – nur mit Ausnahmegrund zulässig.',mid:'Wesentliche Übergaben digital, Restbrüche begründet.',high:'Durchgängig digital mit automatisierten Übergaben.'},
+      {criterion:'Automatisierungsgrad',low:'Überwiegend manuelle Sachbearbeitung.',mid:'Teilautomatisierung bei Datenübernahme und Prüfungen.',high:'Weitgehend automatisiert, soweit rechtlich zulässig.'},
+      {criterion:'Wiederverwendung',low:'Viele lokale Lösungen.',mid:'Teilweise zentrale Dienste.',high:'Konsequente Nutzung zentraler Dienste und Mitnutzbarkeit.'}
+    ],
+    impacts:[
+      {level:'Geringe E2E-Tiefe',arch:'lokale Einzellösungen',cost:[1,'kurzfristig niedriger, langfristig höher'],time:[1,'schneller'],proof:[2,'Ausnahmebegründung je Medienbruch']},
+      {level:'Mittlere E2E-Tiefe',arch:'mehr Integration',cost:[2,'höhere Projektkosten'],time:[2,'mehr Integration'],proof:[2,'Prozess-/Architekturnachweise']},
+      {level:'Hohe E2E-Tiefe',arch:'starke Integration und Automatisierung',cost:[3,'höhere Initialkosten'],time:[3,'längere Konzeption'],proof:[3,'umfangreiche Nachweise']}
+    ],
+    open:'Gibt es inzwischen beschlossene Softwaregrundsätze bzw. eine IT-Strategie? Welche zentralen Komponenten sind nach § 14 HmbVwDiG verbindlich zu nutzen?',
+    sources:['vwdig','ds2025','da']
+  },
+  {
+    id:'zugang', title:'Online-Zugang, Kommunikation & Zahlung', area:'Onlinedienst / Serviceportal',
+    binding:'muss', bindingLabel:'MUSS – HmbVwDiG §§ 3, 5, 7 · HmbVwVfG · OZG', gap:false,
+    summary:'Behörden müssen den elektronischen Zugang eröffnen, das Postfach des Nutzerkontos nutzen, zugelassene Zahlungsverfahren anbieten und Unternehmens-Leistungen ab 2027 ausschließlich digital anbieten.',
+    mandatory:[
+      '§ 3 HmbVwDiG: Landesrechtliche Leistungen, die ausschließlich Unternehmen betreffen, spätestens ab 01.01.2027 ausschließlich elektronisch anbieten; vorab angemessen informieren (Abs. 2).',
+      '§ 5 HmbVwDiG: Zugang eröffnen bei Serviceportal-Leistungen (Abs. 1); Postfach des Nutzerkontos (Abs. 2); Zugang für qualifiziert signierte/gesiegelte Dokumente (Abs. 3); besonderes elektronisches Behördenpostfach (Abs. 4).',
+      '§ 7 HmbVwDiG: Zahlung über von der Finanzbehörde zugelassene Verfahren ermöglichen, soweit technisch möglich.',
+      '§ 3a Abs. 5–6 HmbVwVfG: Schriftformersatz über Nutzerkonto + Online-Formular; Prüfgelegenheit vor Abgabe und Kopie danach.'
+    ],
+    discretion:'Abweichung von „Digital Only“ bei berechtigtem Interesse der Nutzenden; Nutzende können die Bekanntgabe über das Postfach ausschließen (§ 41 Abs. 2b HmbVwVfG); Zahlung nur, soweit technisch möglich.',
+    basisOpen:'Liste der zugelassenen Zahlungsverfahren nicht öffentlich. Ob die Leistung unter Anhang II der SDG-Verordnung fällt, ist je Leistung zu prüfen.',
+    how:[
+      ['Betroffenheit prüfen','Richtet sich die Leistung ausschließlich an Unternehmen (Digital Only ab 2027)? Fällt sie unter die SDG-Verordnung?'],
+      ['Zugang eröffnen','Leistung über das Serviceportal anbieten; Postfach des Nutzerkontos und Behördenpostfach einrichten.'],
+      ['Formular rechtssicher gestalten','Schriftformersatz nach § 3a Abs. 5 HmbVwVfG nutzen; Prüfgelegenheit und Kopie umsetzen.'],
+      ['Zahlung einbinden','Zugelassene Zahlungsverfahren der Finanzbehörde integrieren.'],
+      ['Bekanntgabe planen','Elektronische Bekanntgabe über das Postfach vorsehen; Ausschluss durch Nutzende berücksichtigen.']
+    ],
+    roles:[
+      {role:'ITD',task:'zentrale Online-Infrastruktur steuern',evidence:'Serviceportal / Nutzerkonto / zentrale Komponenten',obligation:'KANN (§ 14 HmbVwDiG) · Rolle in Digitalstrategie belegt',badge:'can',
+       steps:['zentrale Online-Dienste-Infrastruktur bereitstellen','Postfach- und Zahlungsanbindung zentral anbieten','Nutzungsregeln festlegen'],
+       when:'laufend',src:['ds2025','vwdig'],note:'Laut Digitalstrategie steuert ITD hamburgweit nutzbare Anwendungen „von der E-Akte bis zu den Online-Diensten“ (Kap. 2.1.1).'},
+      {role:'Behörde',task:'Zugang, Postfach, Zahlung und Digital Only umsetzen',evidence:'Leistungssteckbrief / Zugangseröffnung / Zahlungsanbindung',obligation:'MUSS',badge:'must',
+       steps:['Digital-Only-Betroffenheit prüfen und Nutzende rechtzeitig informieren','Zugang und Behördenpostfach eröffnen','Antworten über das Nutzerkonto-Postfach senden','zugelassene Zahlungsverfahren anbieten'],
+       when:'vor Go-Live; Digital Only spätestens 01.01.2027',src:['vwdig','vwvfg'],note:'Gilt im Anwendungsbereich des § 2 HmbVwDiG.'},
+      {role:'Projekt / Dienstleister',task:'Online-Dienst technisch anbinden',evidence:'Integrationstests / Formularprüfung',obligation:'MUSS, abgeleitet aus Auftrag',badge:'cond',
+       steps:['Nutzerkonto/Postfach integrieren','Prüf- und Kopiefunktion im Formular umsetzen','Zahlungsverfahren anbinden'],
+       when:'während der Umsetzung',src:['vwvfg','ozg'],note:'Technische Schnittstellen der zentralen Dienste bei ITD erfragen.'}
+    ],
+    scale:['Einfacher Onlinedienst','Mit Zahlung/Bekanntgabe','Unternehmens-Leistung (Digital Only)'],
+    consequences:[
+      {criterion:'Kanäle',low:'Online-Antrag neben anderen Kanälen.',mid:'Postfach-Bekanntgabe und Zahlung integriert.',high:'Papierkanal entfällt; Ausnahmeprozess für berechtigtes Interesse nötig.'},
+      {criterion:'Integration',low:'Formular und Postfach.',mid:'zusätzlich Zahlung und Statusmeldungen.',high:'vollständig digitaler Unternehmensprozess inkl. Nachweisen.'}
+    ],
+    impacts:[
+      {level:'Einfacher Onlinedienst',arch:'Standardkomponenten Serviceportal',cost:[1,'gering'],time:[1,'kurz'],proof:[1,'Zugangseröffnung']},
+      {level:'Mit Zahlung/Bekanntgabe',arch:'Zahlungs- und Postfachintegration',cost:[2,'mittel'],time:[2,'Integrationstests'],proof:[2,'Integrationsnachweise']},
+      {level:'Digital Only',arch:'ausschließlich digitaler Kanal',cost:[2,'mittel; Papierprozess entfällt'],time:[2,'Kommunikation vorab nötig'],proof:[3,'Information der Nutzenden, Ausnahmeprozess']}
+    ],
+    open:'Welche Zahlungsverfahren sind aktuell zugelassen? Welche Leistungen der Behörde fallen unter § 3 HmbVwDiG bzw. Anhang II SDG-VO?',
+    sources:['vwdig','vwvfg','ozg','sdg','ds2025']
+  },
+  {
+    id:'verfahren', title:'Verwaltungsverfahren & Entscheidung', area:'Sachbearbeitung / Vollzug',
+    binding:'muss', bindingLabel:'MUSS – HmbVwVfG', gap:false,
+    summary:'Der interne Kern jeder Leistung: Sachverhalt ermitteln, beteiligen, anhören, entscheiden, bekanntgeben, vollziehen und korrigieren – digital und nachvollziehbar.',
+    mandatory:[
+      'Untersuchungsgrundsatz (§ 24 HmbVwVfG), Beratung und Auskunft (§ 25), Anhörung vor belastenden Entscheidungen (§ 28), Akteneinsicht (§ 29).',
+      'Verwaltungsakt: Nebenbestimmungen (§ 36), Bestimmtheit und Form (§ 37), Begründung (§ 39), Ermessen (§ 40), Bekanntgabe (§ 41).',
+      'Vollständig automatisierter Erlass nur, wenn eine Rechtsvorschrift es zulässt und weder Ermessen noch Beurteilungsspielraum besteht (§ 35a).',
+      'Korrektur: Rücknahme (§ 48), Widerruf (§ 49), Erstattung und Verzinsung (§ 49a).',
+      'Bei neuen IT-Lösungen gilt die E2E-Pflicht (§ 8 Abs. 2 HmbVwDiG) für den gesamten Ablauf – einschließlich Vollzug.'
+    ],
+    discretion:'Organisation von Zeichnung, Mitzeichnung und Workflow; Grad der Teilautomatisierung (KI-Unterstützung nach § 13 HmbVwDiG); Genehmigungsfiktion nur, wo durch Rechtsvorschrift angeordnet (§ 42a).',
+    basisOpen:'Die Sachbearbeitung ist in der Deutschland-Architektur nur mit niedrigem Reifegrad beschrieben; Vollzug, Überwachung und Rechtsbehelf kommen dort nicht als Bausteine vor. Haushalts- und Kassenrecht für Auszahlungen wurde hier noch nicht geprüft.',
+    how:[
+      ['Sollprozess über alle Phasen','Ermittlung, Beteiligung, Entscheidung, Bekanntgabe, Vollzug, Überwachung und Rechtsbehelf als einen digitalen Vorgang modellieren.'],
+      ['Beteiligungen digitalisieren','Andere Behörden und Stellen über Schnittstellen oder Plattformen statt per Papier/E-Mail beteiligen.'],
+      ['Automatisierung rechtlich prüfen','Für Vollautomatisierung Ermächtigung im Fachrecht prüfen (§ 35a); sonst teilautomatisierte Unterstützung.'],
+      ['Vollzug anbinden','Kasse, Register, Produktions- und Ausgabestellen technisch anschließen.'],
+      ['Korrekturen vorsehen','Änderung, Rücknahme, Widerruf, Erstattung und Widerspruch im selben Vorgang abbilden.']
+    ],
+    roles:[
+      {role:'ITD',task:'Workflow-, Automatisierungs- und Integrationskomponenten bereitstellen',evidence:'zentrale Komponenten / Nutzungsregeln',obligation:'KANN (§ 14 HmbVwDiG)',badge:'can',
+       steps:['zentrale Workflow- und Automatisierungsdienste anbieten','Integrationsmuster zu Kasse, Registern, E-Akte bereitstellen','Nutzungsregeln per Verwaltungsvorschrift festlegen'],
+       when:'bei zentralen Plattformentscheidungen',src:['vwdig'],note:'§ 14 nennt „die für Informationstechnik zuständige Behörde“.'},
+      {role:'Behörde',task:'Verfahren rechtmäßig und vollständig digital führen',evidence:'Sollprozess / Akte / Bescheide / Vollzugsnachweise',obligation:'MUSS',badge:'must',
+       steps:['Ermittlung und Beteiligung digital organisieren','Anhörung und Akteneinsicht sicherstellen','Entscheidung begründen und formgerecht bekanntgeben','Vollzug auslösen und nachhalten','Rücknahme, Widerruf, Erstattung und Widerspruch abbilden'],
+       when:'bei jeder Leistung; bei neuen IT-Lösungen von Beginn an',src:['hmbvwvfg','vwdig'],note:'Fachrecht kann abweichende Verfahrensregeln enthalten.'},
+      {role:'Projekt / Dienstleister',task:'Fachverfahren für den Gesamtprozess bauen',evidence:'Prozessabdeckung / Abnahme',obligation:'MUSS, abgeleitet aus Auftrag',badge:'cond',
+       steps:['alle Verfahrensphasen im Fachverfahren abdecken','Schnittstellen für Beteiligung und Vollzug umsetzen','Begründungen, Fristen und Bekanntgabe unterstützen'],
+       when:'Konzeption und Umsetzung',src:['vwdig'],note:'Nicht nur Antrag und Bescheid umsetzen.'}
+    ],
+    scale:['Teildigital','Durchgängig bis Bescheid','Durchgängig inkl. Vollzug'],
+    consequences:[
+      {criterion:'Abdeckung',low:'Online-Antrag, Bearbeitung teils auf Papier.',mid:'Digital bis zum Bescheid; Vollzug manuell.',high:'Digital vom Eingang bis Vollzug, Überwachung und Archivierung.'},
+      {criterion:'Beteiligung anderer Stellen',low:'per Post/E-Mail.',mid:'teilweise über Schnittstellen.',high:'medienbruchfrei mit gesicherter Kommunikation.'},
+      {criterion:'Automatisierung',low:'manuell.',mid:'teilautomatisiert (Prüfungen, Bescheidentwurf).',high:'vollautomatisiert, wo § 35a es zulässt.'}
+    ],
+    impacts:[
+      {level:'Teildigital',arch:'Online-Dienst ohne Integration',cost:[1,'gering'],time:[1,'kurz'],proof:[2,'Begründung je Medienbruch']},
+      {level:'Durchgängig bis Bescheid',arch:'Fachverfahren mit Postfach',cost:[2,'mittel'],time:[2,'mittel'],proof:[2,'Prozessnachweis']},
+      {level:'Durchgängig inkl. Vollzug',arch:'Integration mit Kasse, Registern, E-Akte',cost:[3,'hoch'],time:[3,'länger'],proof:[2,'Integrations- und Vollzugsnachweise']}
+    ],
+    open:'Haushalts-/Kassenrecht für Auszahlungen ergänzen. Welche Fachrechte erlauben vollautomatisierte Bescheide? Wie wird Widerspruch digital geführt?',
+    sources:['hmbvwvfg','vwdig','da']
+  },
+  {
+    id:'akte', title:'E-Akte, Aufbewahrung & Archivierung', area:'Aktenführung',
+    binding:'muss', bindingLabel:'MUSS – HmbArchG § 3 · SOLL – HmbVwDiG §§ 8, 11', gap:false,
+    summary:'Vom Posteingang bis zum Staatsarchiv: Akten elektronisch führen, Papier ersetzend scannen, Fristen überwachen, aussondern, dem Staatsarchiv anbieten und löschen.',
+    mandatory:[
+      'Bei neuen IT-Lösungen umfasst die E2E-Pflicht (§ 8 Abs. 2 HmbVwDiG) laut Digitalstrategie die Digitalisierung „bis zur abschließenden Veraktung“.',
+      'SOLL: zwischen Behörden mit E-Akte medienbruchfrei übermitteln oder Zugriff ermöglichen (§ 8 Abs. 1 S. 1).',
+      'MUSS: Nicht mehr benötigte Unterlagen fortlaufend aussondern, dem Staatsarchiv anbieten und bei Archivwürdigkeit abliefern; spätestens 30 Jahre nach Entstehung (§ 3 Abs. 1 HmbArchG). Löschung ohne Archiventscheidung erst nach 6 Monaten, bei maschinenlesbaren Unterlagen nach 4 Monaten.',
+      'SOLL: Papieroriginale durch elektronische Wiedergabe ersetzen, bildlich und inhaltlich übereinstimmend nach Stand der Technik (§ 11 Abs. 1); danach vernichten oder zurückgeben (Abs. 2).'
+    ],
+    discretion:'Kein ersetzendes Scannen bei unverhältnismäßigem technischem Aufwand (§ 11 Abs. 1 S. 3). Akteneinsicht in verschiedenen Formen möglich (§ 12).',
+    basisOpen:'Aufbewahrungsfristen ergeben sich aus Fach- und Verwaltungsvorschriften. Eine technische Aussonderungsschnittstelle zum Staatsarchiv ist nicht öffentlich beschrieben.',
+    how:[
+      ['Aktenrelevanz festlegen','Welche Dokumente und Metadaten aus dem Fachverfahren gehören in die Akte?'],
+      ['Integration planen','Fachverfahren ↔ E-Akte medienbruchfrei verbinden; Standards der IT-Behörde nutzen.'],
+      ['Ersetzendes Scannen','Scanprozess mit Qualitätssicherung definieren; Vernichtung bzw. Rückgabe regeln.'],
+      ['Akteneinsicht ermöglichen','Elektronische Formen der Akteneinsicht vorsehen (§ 12).'],
+      ['Aussondern & archivieren','Fristen überwachen, dem Staatsarchiv anbieten, danach löschen (§ 3 HmbArchG, Art. 17 DSGVO) – auch Daten im Fachverfahren.']
+    ],
+    roles:[
+      {role:'ITD',task:'Übermittlungsstandards und E-Akte-Integration bereitstellen',evidence:'Verwaltungsvorschrift / Integrationsmuster',obligation:'KANN (§ 8 Abs. 1 S. 2 HmbVwDiG)',badge:'can',
+       steps:['Standards zur Übermittlung elektronischer Akten festlegen','Integrationsmuster Fachverfahren ↔ E-Akte bereitstellen'],
+       when:'bei zentralen Vorgaben',src:['vwdig'],note:'Projekt E-Akte 2030 berücksichtigen.'},
+      {role:'Behörde',task:'Aktenführung und Scanprozess verantworten',evidence:'Aktenplan / Scananweisung',obligation:'MUSS (Archiv) · SOLL (Scannen)',badge:'must',
+       steps:['Aktenrelevanz festlegen','ersetzendes Scannen organisieren','Akteneinsicht elektronisch ermöglichen','Unterlagen aussondern und dem Staatsarchiv anbieten','nach Archiventscheidung löschen'],
+       when:'bei Einführung und laufend',src:['vwdig','archg'],note:'Die Anbietungspflicht nach HmbArchG ist ein MUSS; Scannen und Übermittlung sind SOLL.'},
+      {role:'Projekt / Dienstleister',task:'E-Akte-Anbindung umsetzen',evidence:'Schnittstellentest',obligation:'MUSS, abgeleitet aus Auftrag',badge:'cond',
+       steps:['Schnittstelle zur E-Akte implementieren','Metadaten übergeben','Übergabe testen'],
+       when:'während der Umsetzung',src:['vwdig'],note:''}
+    ],
+    scale:['Teilweise elektronisch','Hybride Akte','Vollständig elektronisch'],
+    consequences:[
+      {criterion:'Medienbruch Fachverfahren ↔ Akte',low:'manuelle Ablage.',mid:'teilweise automatische Übergabe.',high:'automatische, vollständige Veraktung.'}
+    ],
+    impacts:[
+      {level:'Teilweise elektronisch',arch:'manuelle Ablage',cost:[1,'gering'],time:[1,'kurz'],proof:[2,'Begründung']},
+      {level:'Hybride Akte',arch:'Teilintegration',cost:[2,'mittel'],time:[2,'mittel'],proof:[2,'Integrationsnachweis']},
+      {level:'Vollständig elektronisch',arch:'voll integriert',cost:[3,'höhere Initialkosten'],time:[2,'mittel'],proof:[2,'Scan- und Integrationsnachweise']}
+    ],
+    open:'Aussonderungsschnittstelle zum Staatsarchiv klären; Integrationsvorgaben aus E-Akte 2030 einholen; Löschkonzepte für Fachverfahrensdaten.',
+    sources:['archg','vwdig','dsgvo','ds2025','partner']
+  },
+  {
+    id:'opensource', title:'Open Source & Nachnutzung', area:'Beschaffung / Architektur',
+    binding:'muss', bindingLabel:'MUSS – Berücksichtigungspflicht § 9 HmbVwDiG', gap:false,
+    summary:'Bei neuen IT-Lösungen muss Open-Source-Software mindestens gleichwertig in die Auswahl aufgenommen werden; Lösungen sollen für andere Verwaltungen nachnutzbar sein.',
+    mandatory:[
+      '§ 9 HmbVwDiG: Open-Source-Software wird bei Einführung neuer IT-Lösungen mindestens gleichwertig mit proprietärer Software in die Auswahl aufgenommen.',
+      'SOLL: im Auftrag entwickelte Systeme sollen für die Mitnutzung durch Bund, Länder und Kommunen geeignet sein (§ 8 Abs. 4 HmbVwDiG).'
+    ],
+    discretion:'Kein Vorrang: Andere Wertungskriterien bleiben unberührt (§ 9 S. 2). D-Architektur-Prinzip „Prefer Reuse over Buy over Make“ – Open Source wird dort bevorzugt (Verbindlichkeit noch auszugestalten).',
+    basisOpen:'Eine FHH-weite Vorgabe zur Veröffentlichung eigenen Codes (z. B. auf openCode) ist nicht belegt.',
+    how:[
+      ['Nachnutzung prüfen','Gibt es bereits nachnutzbare Lösungen (z. B. auf openCode oder bei anderen Ländern)?'],
+      ['OSS gleichwertig einbeziehen','Open-Source-Optionen aktiv in Markterkundung und Bewertung aufnehmen.'],
+      ['Nachnutzbarkeit vertraglich sichern','Lizenz- und Nutzungsrechte für die Mitnutzung durch andere Verwaltungen regeln.'],
+      ['Entscheidung dokumentieren','Bewertung und Gewichtung nachvollziehbar festhalten.']
+    ],
+    roles:[
+      {role:'ITD',task:'Nachnutzung und OSS-Leitplanken unterstützen',evidence:'Leitfaden / Katalog',obligation:'SOLL (Strategie)',badge:'should',
+       steps:['nachnutzbare Lösungen katalogisieren','Lizenzmuster bereitstellen'],when:'laufend',src:['da'],note:''},
+      {role:'Behörde',task:'OSS in Auswahl aufnehmen und Nachnutzbarkeit sichern',evidence:'Vergabevermerk / Bewertungsmatrix',obligation:'MUSS (Berücksichtigung)',badge:'must',
+       steps:['OSS-Optionen recherchieren','gleichwertig bewerten','Mitnutzungsrechte vertraglich regeln'],
+       when:'vor Beschaffung',src:['vwdig'],note:'Gilt für Behörden im Sinne von § 2 Abs. 1 S. 1 HmbVwDiG.'},
+      {role:'Projekt / Dienstleister',task:'nachnutzbar entwickeln',evidence:'Lizenz / Dokumentation',obligation:'SOLL / vertraglich',badge:'should',
+       steps:['modular und portierbar entwickeln','Lizenz und Dokumentation bereitstellen'],when:'während der Umsetzung',src:['vwdig','da'],note:''}
+    ],
+    scale:['Proprietär','Hybrid','Open Source'],
+    consequences:[
+      {criterion:'Abhängigkeit',low:'Herstellerbindung möglich.',mid:'Teilweise austauschbar.',high:'Austausch- und Nachnutzung erleichtert; eigene Betriebs-/Pflegekompetenz nötig.'}
+    ],
+    impacts:[
+      {level:'Proprietär',arch:'Herstellerlösung',cost:[2,'Lizenzkosten'],time:[1,'schnell beschaffbar'],proof:[2,'Begründung der Auswahl']},
+      {level:'Hybrid',arch:'OSS-Kern mit Herstellerservice',cost:[2,'mittel'],time:[2,'mittel'],proof:[2,'Bewertungsmatrix']},
+      {level:'Open Source',arch:'offener Code, nachnutzbar',cost:[2,'Pflege- und Betriebskosten'],time:[2,'Aufbau Kompetenz'],proof:[1,'Lizenznachweis']}
+    ],
+    open:'Gibt es FHH-Vorgaben zur Veröffentlichung von Code und zu Lizenzen?',
+    sources:['vwdig','da']
+  },
+  {
+    id:'ki', title:'KI-Einsatz', area:'Fachverfahren / Daten',
+    binding:'bedingt', bindingLabel:'MUSS – wenn KI eingesetzt wird', gap:false,
+    summary:'KI darf in der Verwaltung eingesetzt werden, mit Dokumentations-, Anonymisierungs- und DSFA-Pflichten (§ 13 HmbVwDiG) sowie den risikobasierten Pflichten der EU-KI-Verordnung.',
+    mandatory:[
+      '§ 13 Abs. 1 HmbVwDiG: KI-Einsatz unter Beachtung der maßgeblichen Rechtsvorschriften; bei personenbezogenen Daten Erhebungskontext und Datenart gesondert dokumentieren.',
+      '§ 13 Abs. 2: Für das Training Daten anonymisieren; nur wenn das nicht möglich oder unverhältnismäßig ist, pseudonymisieren; erst danach personenbezogen.',
+      '§ 13 Abs. 3: Zweckändernde Weiterverarbeitung für Training nur nach Datenschutz-Folgenabschätzung (Art. 35 DSGVO).',
+      'KI-Verordnung (EU) 2024/1689: Pflichten je nach Risikoklasse; gestaffelte Geltung – Fristen vor Projektstart aktuell prüfen.'
+    ],
+    discretion:'Der Senat kann den KI-Einsatz per Rechtsverordnung regeln und Erprobungen bis zu drei Jahren zulassen (§ 13 Abs. 4).',
+    basisOpen:'Ob eine Senats-Rechtsverordnung nach § 13 Abs. 4 erlassen wurde, ist nicht belegt. Die „Hamburger Leitlinien KI und Daten“ (Digitalstrategie) sind auf ihre Verbindlichkeit zu prüfen.',
+    how:[
+      ['Use Case einordnen','Risikoklasse nach KI-Verordnung bestimmen (verboten, hoch, begrenzt, minimal).'],
+      ['Daten prüfen','Rechtsgrundlage, Anonymisierung oder Pseudonymisierung fürs Training; Dokumentation nach § 13 Abs. 1.'],
+      ['DSFA durchführen','Bei Zweckänderung zum Training und bei hohem Risiko.'],
+      ['Transparenz & Aufsicht','Menschliche Aufsicht, Protokollierung und Kennzeichnung je nach Risikoklasse festlegen.']
+    ],
+    roles:[
+      {role:'ITD',task:'KI-Querschnittsdienste und Governance bereitstellen',evidence:'KI-Governance / zentrale Dienste',obligation:'SOLL (Strategie)',badge:'should',
+       steps:['zentrale KI-Dienste anbieten','Leitlinien operationalisieren'],when:'laufend',src:['ds2025','da'],note:''},
+      {role:'Behörde',task:'KI-Einsatz rechtskonform verantworten',evidence:'Dokumentation § 13 / DSFA / Risikoklassifizierung',obligation:'MUSS bei KI-Einsatz',badge:'cond',
+       steps:['Risikoklasse bestimmen','Erhebungskontext und Datenart dokumentieren','Trainingsdaten anonymisieren bzw. pseudonymisieren','DSFA bei Zweckänderung'],
+       when:'vor Einsatz und bei Änderungen',src:['vwdig','kivo','dsgvo'],note:''},
+      {role:'Projekt / Dienstleister',task:'KI-System konform liefern',evidence:'technische Dokumentation / Tests',obligation:'MUSS je Risikoklasse',badge:'cond',
+       steps:['Pflichten der Risikoklasse umsetzen','Protokollierung und Aufsicht ermöglichen'],when:'Umsetzung',src:['kivo'],note:''}
+    ],
+    scale:['Minimales Risiko','Begrenztes Risiko','Hochrisiko'],
+    consequences:[
+      {criterion:'Pflichten nach KI-VO',low:'kaum spezifische Pflichten.',mid:'Transparenzpflichten.',high:'umfangreiche Anforderungen (Risikomanagement, Dokumentation, Aufsicht).'}
+    ],
+    impacts:[
+      {level:'Minimales Risiko',arch:'Standard-KI-Dienst',cost:[1,'gering'],time:[1,'kurz'],proof:[1,'Dokumentation § 13']},
+      {level:'Begrenztes Risiko',arch:'mit Transparenzfunktionen',cost:[2,'mittel'],time:[2,'mittel'],proof:[2,'Transparenznachweis']},
+      {level:'Hochrisiko',arch:'Risikomanagement und Aufsicht',cost:[3,'hoch'],time:[3,'lang'],proof:[3,'umfangreiche Konformitätsnachweise']}
+    ],
+    open:'Wurde eine Rechtsverordnung nach § 13 Abs. 4 HmbVwDiG erlassen? Wie verbindlich sind die Hamburger Leitlinien KI und Daten?',
+    sources:['vwdig','kivo','dsgvo','ds2025','da']
+  }
+];
+
+/* topic → Journey-Schritte aus der Journey ableiten (eine Quelle der Wahrheit) */
+data.forEach(t=>{ t.steps = journeyData.map((s,i)=>s.topics.includes(t.id)?i:-1).filter(i=>i>=0); });
+const byId = Object.fromEntries(data.map(t=>[t.id,t]));
+
+/* ---------- Helfer ---------- */
+const $ = id => document.getElementById(id);
+const badge = (cls,txt) => `<span class="badge ${cls}">${txt}</span>`;
+const bindingBadge = t => badge(BINDING[t.binding].cls, t.bindingLabel);
+const gapBadge = t => t.gap ? ' '+badge('b-gap','FHH-Quelle fehlt') : '';
+const dots = n => '●'.repeat(n)+`<span class="off">${'●'.repeat(3-n)}</span>`;
+const srcItem = id => { const s=SOURCES[id];
+  return `<li><a href="${s.url}" target="_blank" rel="noopener">${s.label}<span class="sr-only"> (neues Fenster)</span></a>`+
+    (s.ok?`<span class="chk ok">✓ online geprüft ${CHECKED}</span>`:`<span class="chk no">⚠ nicht online bestätigt</span>`)+`</li>`; };
+const srcLinks = ids => ids.map(id=>`<a href="${SOURCES[id].url}" target="_blank" rel="noopener">${SOURCES[id].label}</a>`).join('<br>');
+const stepName = i => `${i+1} · ${journeyData[i].short}`;
+
+/* ---------- Journey rendern ---------- */
+const NARROW = '(max-width:1200px)';
+function stepBtn(s,i,lane){
+  const [t,d] = laneOf(s,lane.key);
+  return `<button type="button" class="jstep ${lane.cls}" data-step="${i}" aria-controls="journeyDetail"><span class="lane-mini">${lane.label}</span><strong>${t}</strong><span>${d}</span></button>`;
+}
+function renderJourney(){
+  let h;
+  if (window.matchMedia(NARROW).matches){
+    h = journeyData.map((s,i)=>{
+      const ph = PHASES.find(p=>p.from===i);
+      return (ph?`<div class="jphase-m">${ph.label}</div>`:'') +
+        `<div class="jcol"><div class="jnum">${i+1} · ${s.short} ${badge(DA_COVER[s.daCover].cls, DA_COVER[s.daCover].txt)}</div>${LANES.map(l=>stepBtn(s,i,l)).join('')}</div>`;
+    }).join('');
+  } else {
+    h = '<div class="lane-label" aria-hidden="true"></div>' +
+      PHASES.map(p=>`<div class="jphase${p.label==='Leistungserbringung'?' core':''}" style="grid-column:${p.from+2} / ${p.to+3}">${p.label}</div>`).join('') +
+      '<div class="lane-label" aria-hidden="true"></div>' +
+      journeyData.map((s,i)=>`<div class="jhead" aria-hidden="true">${i+1}<span class="da-dot ${s.daCover}" title="${DA_COVER[s.daCover].txt}"></span></div>`).join('') +
+      LANES.map(l=>`<div class="lane-label">${l.label}</div>` + journeyData.map((s,i)=>stepBtn(s,i,l)).join('')).join('');
+  }
+  $('journey').innerHTML = h;
+  $('journey').querySelectorAll('.jstep').forEach(b=>b.addEventListener('click',()=>openJourney(+b.dataset.step)));
+  markJourney();
+}
+let activeStep = -1;
+function markJourney(){
+  const q = $('search').value.trim().toLowerCase();
+  $('journey').querySelectorAll('.jstep').forEach(b=>{
+    const i=+b.dataset.step, s=journeyData[i];
+    b.classList.toggle('active', i===activeStep);
+    b.setAttribute('aria-expanded', i===activeStep ? 'true':'false');
+    const hit = q && (JSON.stringify(s)+(s.typed?JSON.stringify(LTYPES[activeType]):'')).toLowerCase().includes(q);
+    b.classList.toggle('hit', !!hit);
+    b.classList.toggle('dim', !!q && !hit);
+  });
+}
+function openJourney(i){
+  const x = journeyData[i]; activeStep = i;
+  $('jTitle').textContent = x.title;
+  $('jSubtitle').textContent = x.subtitle;
+  const lt = LTYPES[activeType];
+  const projects = x.projects.length ? x.projects.map(k=>{const p=P[k];return `
+    <div class="project"><div class="project-top"><span class="project-name">${p.name}</span><span class="tag">${p.status}</span></div>
+    <p>${p.contribution}</p><small>${p.owner}</small><br><a href="${SOURCES[p.src].url}" target="_blank" rel="noopener">Quelle zum Vorhaben</a></div>`}).join('')
+    : '<div class="subtitle">Kein öffentlich belastbar zugeordnetes Vorhaben hinterlegt.</div>';
+  const laneTxt = key => x.typed ? `<b>${laneOf(x,key)[0]}:</b> ${laneOf(x,key)[1]}` : '';
+  $('jGrid').innerHTML = `
+    ${x.typed?`<div class="item full typed"><strong>Leistungstyp: ${lt.label}</strong>${lt.ex}. ${lt.vollzug}</div>`:''}
+    <div class="item"><strong>Bürger / Unternehmen</strong>${x.customer}${x.typed?'<br>'+laneTxt('kunde'):''}</div>
+    <div class="item"><strong>Zuständige Behörde</strong>${x.admin}${x.typed?'<br>'+laneTxt('beh'):''}</div>
+    <div class="item"><strong>Beteiligte & Querschnitt</strong>${x.involved}${x.typed?'<br>'+laneTxt('bet'):''}</div>
+    <div class="item full">
+      <div class="state"><div class="state-label s-fixed">D-Architektur</div><div>${badge(DA_COVER[x.daCover].cls, DA_COVER[x.daCover].txt)} ${x.fixed}<div class="chips" style="margin-top:6px">${x.blocks.map(b=>`<span class="chip${/niedrig/.test(b)?' low':''}">${b}</span>`).join('')}</div></div></div>
+      <div class="state"><div class="state-label s-fhh">FHH-Vorgabe (belegt)</div><div>${x.fhh}</div></div>
+      <div class="state"><div class="state-label s-interpret">Interpretationsraum</div><div>${x.interpret}</div></div>
+      <div class="state"><div class="state-label s-open">Nicht festgelegt</div><div>${x.open}</div></div>
+    </div>
+    <div class="item"><strong>Abgeleitete Handlungsfolge ITD</strong>${x.itd}</div>
+    <div class="item"><strong>Abgeleitete Handlungsfolge Behörde</strong>${x.authority}</div>
+    <div class="item"><strong>Betroffene Themen</strong><div class="chips">${x.topics.map(id=>`<button type="button" class="chip link" data-topic="${id}">${byId[id].title}</button>`).join('')}</div></div>
+    <div class="item full"><strong>Beitragende Vorhaben / Projekte</strong>
+      <div class="subtitle">Die Zuordnung zum Journey-Schritt ist eine Ableitung dieses Navigators.</div>
+      <div class="projects">${projects}</div></div>
+    <div class="item full"><strong>Quellen</strong><ul class="src-list">${x.sources.map(srcItem).join('')}</ul></div>`;
+  $('jGrid').querySelectorAll('[data-topic]').forEach(b=>b.addEventListener('click',()=>openDrawer(byId[b.dataset.topic], b)));
+  $('journeyDetail').hidden = false;
+  markJourney();
+  $('journeyDetail').scrollIntoView({behavior:'smooth',block:'nearest'});
+  $('journeyDetail').focus({preventScroll:true});
+}
+function closeJourney(){ activeStep=-1; $('journeyDetail').hidden=true; markJourney(); }
+function setType(t){
+  activeType = t;
+  $('typeGroup').querySelectorAll('.pill').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.type===t)));
+  renderJourney();
+  if(activeStep>=0 && journeyData[activeStep].typed) openJourney(activeStep);
+}
+
+/* ---------- Themen rendern ---------- */
+let activeFilter='all', activeRole='all';
+function topicText(t){ return [t.title,t.area,t.bindingLabel,t.summary,t.mandatory.join(' '),t.discretion,t.basisOpen,t.open,
+  t.how.flat().join(' '),t.roles.map(r=>[r.role,r.task,r.evidence,r.obligation,r.steps.join(' '),r.note].join(' ')).join(' '),
+  t.sources.map(id=>SOURCES[id].label).join(' '), t.steps.map(stepName).join(' ')].join(' ').toLowerCase(); }
+function filtered(){
+  const q=$('search').value.trim().toLowerCase();
+  return data.filter(t=>{
+    const f = activeFilter==='all' || (activeFilter==='gap' ? t.gap : t.binding===activeFilter);
+    return f && (!q || topicText(t).includes(q));
+  });
+}
+function render(){
+  const list = filtered();
+  const res = $('results');
+  const roleTxt = activeRole==='all' ? '' : ` · Ansicht: ${activeRole}`;
+  $('resultCount').textContent = `${list.length} von ${data.length} Themen${roleTxt}`;
+  if(!list.length){
+    res.innerHTML = '<div class="empty">Keine Themen für diese Suche/Filter. <button type="button" class="linkbtn" id="resetBtn">Filter zurücksetzen</button></div>';
+    $('resetBtn').onclick = ()=>{ $('search').value=''; setFilter('all'); };
+    markJourney(); return;
+  }
+  if(activeRole==='all'){
+    res.innerHTML = `<div class="grid">${list.map(t=>`
+      <button type="button" class="card" data-id="${t.id}" aria-haspopup="dialog">
+        <h3>${t.title}</h3><p>${t.summary}</p>
+        <div class="meta"><span class="tag">${t.area}</span>${bindingBadge(t)}${gapBadge(t)}</div>
+        <div class="steps-line">Journey: ${t.steps.length ? t.steps.map(i=>i+1).join(', ') : '–'}</div>
+      </button>`).join('')}</div>`;
+    res.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>openDrawer(byId[c.dataset.id], c)));
+  } else {
+    const items = list.map(t=>({t, r:t.roles.find(r=>r.role===activeRole)})).filter(x=>x.r);
+    res.innerHTML = `<div class="role-view">${items.map(({t,r})=>`
+      <section class="rv-topic" aria-label="${t.title}">
+        <div class="rv-head"><h3>${t.title}</h3><div>${badge(OBL[r.badge],r.obligation)}</div></div>
+        <div class="subtitle" style="margin-top:4px">${r.task} · <b>Nachweis:</b> ${r.evidence} · <b>Wann:</b> ${r.when}</div>
+        <ol>${r.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+        <button type="button" class="linkbtn" data-id="${t.id}" aria-haspopup="dialog">Thema vollständig öffnen</button>
+      </section>`).join('') || '<div class="empty">Für diese Rolle sind in den gefilterten Themen keine Aufgaben hinterlegt.</div>'}</div>`;
+    res.querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click',()=>openDrawer(byId[b.dataset.id], b)));
+  }
+  markJourney();
+}
+
+/* ---------- Drawer ---------- */
+let lastFocus=null;
+function openDrawer(t, opener){
+  lastFocus = opener || document.activeElement;
+  $('dTitle').textContent = t.title;
+  $('dSub').innerHTML = `${t.area} · ${bindingBadge(t)}${gapBadge(t)}`;
+  $('dSteps').innerHTML = t.steps.map(i=>`<button type="button" class="chip link" data-step="${i}">Journey ${stepName(i)}</button>`).join('');
+  $('dSteps').querySelectorAll('[data-step]').forEach(b=>b.addEventListener('click',()=>{ closeDrawer(); openJourney(+b.dataset.step); }));
+  $('dFrame').innerHTML = `
+    <div class="frame-row"><span class="badge b-must">Verpflichtend</span><ul>${t.mandatory.map(m=>`<li>${m}</li>`).join('')}</ul></div>
+    <div class="frame-row"><span class="badge b-can">Spielraum</span><div>${t.discretion}</div></div>
+    <div class="frame-row"><span class="badge b-open">Nicht belegt</span><div>${t.basisOpen}</div></div>`;
+  $('dHow').innerHTML = t.how.map((h,i)=>`<div class="how"><div class="num" aria-hidden="true">${i+1}</div><div><b>${h[0]}</b><span>${h[1]}</span></div></div>`).join('');
+  $('dRoles').innerHTML = t.roles.map((r,i)=>`
+    <div class="role">
+      <button type="button" class="role-btn" aria-expanded="${activeRole===r.role?'true':'false'}" aria-controls="rp-${i}">
+        <span class="role-name">${r.role}</span><span class="role-task">${r.task}</span>
+        <span>${badge(OBL[r.badge],r.obligation)} <span class="chev" aria-hidden="true">›</span></span>
+      </button>
+      <div class="role-panel" id="rp-${i}" ${activeRole===r.role?'':'hidden'}>
+        <ol>${r.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+        <div class="grid2">
+          <div class="item"><strong>Wann?</strong>${r.when}</div>
+          <div class="item"><strong>Nachweis / Artefakt</strong>${r.evidence}</div>
+          <div class="item full"><strong>Quelle</strong>${srcLinks(r.src)}</div>
+          ${r.note?`<div class="item full"><strong>Einordnung / Einschränkung</strong>${r.note}</div>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+  $('dRoles').querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>{
+    const open = b.getAttribute('aria-expanded')==='true';
+    b.setAttribute('aria-expanded', String(!open));
+    $(b.getAttribute('aria-controls')).hidden = open;
+  }));
+  const [l,m,h] = t.scale;
+  $('dCons').innerHTML = `<table class="matrix"><thead><tr><th scope="col">Kriterium</th><th scope="col">${l}</th><th scope="col">${m}</th><th scope="col">${h}</th></tr></thead>
+    <tbody>${t.consequences.map(c=>`<tr><td class="crit">${c.criterion}</td><td>${c.low}</td><td class="mid">${c.mid}</td><td class="high">${c.high}</td></tr>`).join('')}</tbody></table>`;
+  const cell = ([n,txt]) => `<span class="dots" aria-label="Stufe ${n} von 3">${dots(n)}</span><span class="impact-text">${txt}</span>`;
+  $('dImpacts').innerHTML = `<table class="matrix"><thead><tr><th scope="col">Ausprägung</th><th scope="col">Architektur / Betrieb</th><th scope="col">Kosten</th><th scope="col">Umsetzungszeit</th><th scope="col">Nachweisaufwand</th></tr></thead>
+    <tbody>${t.impacts.map(x=>`<tr><td class="crit">${x.level}</td><td>${x.arch}</td><td>${cell(x.cost)}</td><td>${cell(x.time)}</td><td>${cell(x.proof)}</td></tr>`).join('')}</tbody></table>
+    <p class="note">Relative Einschätzung (● gering · ●●● hoch), keine Kostenschätzung.</p>`;
+  $('dOpen').innerHTML = `<b>Offen / zu prüfen:</b> ${t.open}`;
+  $('dSources').innerHTML = t.sources.map(srcItem).join('');
+  $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden','false');
+  $('overlay').hidden = false;
+  document.querySelector('main').setAttribute('inert','');
+  $('closeBtn').focus();
+}
+function closeDrawer(){
+  if(!$('drawer').classList.contains('open')) return;
+  $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden','true');
+  $('overlay').hidden = true;
+  document.querySelector('main').removeAttribute('inert');
+  if(lastFocus && document.contains(lastFocus)) lastFocus.focus();
+}
+function trapFocus(e){
+  if(e.key!=='Tab' || !$('drawer').classList.contains('open')) return;
+  const f = [...$('drawer').querySelectorAll('button,a[href],[tabindex]:not([tabindex="-1"])')].filter(el=>!el.closest('[hidden]'));
+  const first=f[0], last=f[f.length-1];
+  if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+}
+
+/* ---------- Bausteine, Prinzipien, Prüfprotokoll ---------- */
+$('blockChips').innerHTML = BLOCKS.map(([n,low])=>`<span class="chip${low?' low':''}">${n}${low?' · Reifegrad niedrig':''}</span>`).join('');
+$('principleChips').innerHTML = PRINCIPLES.map(p=>`<span class="chip">${p}</span>`).join('');
+$('logBody').innerHTML = `
+  <h4>Änderungen in v12 – echte Ende-zu-Ende-Sicht</h4>
+  <ul>
+    <li>Die Journey hat jetzt <b>drei Spuren</b> (Kunde, zuständige Behörde, Beteiligte &amp; Querschnitt) und <b>zehn Schritte</b> vom Anlass bis zur Archivierung und Steuerung. In v11 endete sie praktisch beim Bescheid und war aus Sicht des Online-Dienstes gedacht.</li>
+    <li>Neu sind die Phasen Sachverhaltsermittlung &amp; Beteiligung, Entscheidung, <b>Leistungserbringung/Vollzug</b>, Überwachung &amp; Rechtsbehelf sowie Aussonderung/Archiv.</li>
+    <li>Schritt 7 und 8 passen sich an den <b>Leistungstyp</b> an: Geldleistung, Genehmigung, Dokument oder Registeränderung.</li>
+    <li>Eingangskanäle sind kanalunabhängig (online, Papier, vor Ort) und münden in denselben Vorgang.</li>
+    <li>Jeder Schritt zeigt, ob die D-Architektur ihn abdeckt. Lücken bestehen bei Entscheidung, Vollzug und Rechtsbehelf.</li>
+    <li>Neues Thema „Verwaltungsverfahren &amp; Entscheidung“ (HmbVwVfG). Das E-Akte-Thema ist um das Archivrecht ergänzt (§ 3 HmbArchG).</li>
+    <li>Online geprüft: das Inhaltsverzeichnis des HmbVwVfG in geltender Fassung (§§ 24, 25, 28, 29, 35a, 36–42a, 48–49a vorhanden) und der Wortlaut von § 3 HmbArchG.</li>
+  </ul>
+  <h4>Online geprüft am ${CHECKED}</h4>
+  <ul>
+    <li><b>Deutschland-Architektur</b> (Version 1.0 vom 13.02.2026): Bausteinliste vervollständigt (u. a. Design-System, KI-Querschnittsdienste, Geokodierung, Kartierung, weitere Verzeichnisse). Niedriger Reifegrad gilt für 6 Bausteine – ergänzt um Cloud-Infrastruktur und Netze. Die Verbindlichkeit soll erst im Governance-Konzept festgelegt werden.</li>
+    <li><b>HmbVwDiG</b> (HmbGVBl. 2024 S. 575) als neue Hauptquelle: §§ 3–9, 11–14 im Wortlaut geprüft. Dadurch ist E2E jetzt eine gesetzliche MUSS-Vorgabe (§ 8 Abs. 2), nicht mehr nur Strategie.</li>
+    <li><b>HmbVwVfG</b> §§ 3a Abs. 5–6 und 41 Abs. 2b in der Fassung des Digitalisierungspakets geprüft.</li>
+    <li><b>HmbBITVO</b> §§ 1–3 geprüft: Erklärung zur Barrierefreiheit, Antwortfrist zwei Wochen, jährliche Aktualisierung, Überwachungsstelle bei der IT-Behörde.</li>
+    <li><b>HmbITSG</b> §§ 1–3 und Anlage geprüft: Pflicht betrifft den IT-Betrieb von Fachverfahren der Anlage, die für hoheitliche Aufgaben unverzichtbar sind; Vergabe nur an Inhouse-Partner (§ 108 GWB); Ausnahme für Kooperationen.</li>
+    <li><b>Digitalstrategie 2025</b>: Aussage zu Fachverfahren (PDF-S. 13) bestätigt; ITD als zentraler Anbieter für Datenschutz und Barrierefreiheit (PDF-S. 14); BSI 200-4 und geplantes IT-Sicherheitsgesetz (PDF-S. 22).</li>
+    <li><b>XBau/XPlanung</b> (IT-PLR-Beschluss 2017/37) mit Fristen bestätigt.</li>
+    <li>Alle Links per HTTP-Abruf geprüft (Status 200); Projektseiten HELP, einfach.hamburg, Registermodernisierung und E-Akte 2030 inhaltlich abgeglichen.</li>
+  </ul>
+  <h4>Nicht bestätigt / bewusst offen</h4>
+  <ul>
+    <li>Verbindlicher IT-PLR-Beschluss zu <b>XZuFi</b> (aus v10) – online nicht gefunden, deshalb als „nicht bestätigt“ markiert.</li>
+    <li>Hamburger <b>IT-Sicherheitsgesetz</b>: laut Strategie geplant, Stand unbekannt. Die interne Informationssicherheitsleitlinie ist nicht öffentlich.</li>
+    <li>Ob „die für Informationstechnik zuständige Behörde“ (HmbVwDiG, HmbBITVO) organisatorisch ITD ist – plausibel, aber intern zu bestätigen.</li>
+    <li>Softwaregrundsätze und IT-Strategie, zugelassene Zahlungsverfahren, Rechtsverordnung nach § 13 Abs. 4 HmbVwDiG, Haushalts- und Kassenrecht für den Vollzug, Ausschluss des Widerspruchsverfahrens im Fachrecht.</li>
+    <li>Fristen der KI-Verordnung vor Projektstart erneut prüfen.</li>
+  </ul>
+  <h4>Korrekturen gegenüber v10</h4>
+  <ul>
+    <li>Journey: Projekte waren durch doppelte Schlüssel alle bei Schritt 1 gelandet (nur „E-Akte 2030“ sichtbar) – jetzt je Schritt korrekt zugeordnet.</li>
+    <li>Matrix „Verpflichtend/Spielraum“: wurde zuvor per Textsplit erzeugt und ordnete z. B. bei Barrierefreiheit den Spielraum als Pflicht ein – jetzt eigene Datenfelder.</li>
+    <li>Fehlende CSS-Klassen ergänzt; Platzhalter-Aufgabendetails entfernt (Details jetzt einmal je Rolle).</li>
+    <li>Barrierefreiheit: Bedienung per Tastatur, Fokusführung im Dialog, Escape, Labels, ARIA-Zustände.</li>
+    <li>Neue Themen: Online-Zugang &amp; Zahlung, E-Akte, Open Source, KI. Rollen vereinheitlicht (ITD, Behörde, Projekt / Dienstleister, Betrieb).</li>
+    <li>Darstellung: Legende, Rollenansicht, Suche über alle Inhalte inkl. Journey, Trefferzahl, mobile Journey, Druck als Checkliste.</li>
+  </ul>`;
+
+/* ---------- Events ---------- */
+function setFilter(f){ activeFilter=f; $('filterGroup').querySelectorAll('.pill').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.filter===f))); render(); }
+$('filterGroup').querySelectorAll('.pill').forEach(b=>b.addEventListener('click',()=>setFilter(b.dataset.filter)));
+$('roleGroup').querySelectorAll('.pill').forEach(b=>b.addEventListener('click',()=>{
+  activeRole=b.dataset.role; $('roleGroup').querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed', String(x===b))); render();
+}));
+$('search').addEventListener('input', render);
+$('jClose').addEventListener('click', closeJourney);
+$('typeGroup').querySelectorAll('.pill').forEach(b=>b.addEventListener('click',()=>setType(b.dataset.type)));
+$('closeBtn').addEventListener('click', closeDrawer);
+$('overlay').addEventListener('click', closeDrawer);
+$('printBtn').addEventListener('click', ()=>{ document.body.classList.add('print-drawer'); window.print(); });
+window.addEventListener('afterprint', ()=>document.body.classList.remove('print-drawer'));
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ if($('drawer').classList.contains('open')) closeDrawer(); else if(!$('journeyDetail').hidden) closeJourney(); }
+  trapFocus(e);
+});
+let mqWide = window.matchMedia(NARROW).matches;
+window.addEventListener('resize', ()=>{ const now=window.matchMedia(NARROW).matches; if(now!==mqWide){ mqWide=now; renderJourney(); } });
+
+renderJourney();
+render();
+</script>
+</body>
+</html>
