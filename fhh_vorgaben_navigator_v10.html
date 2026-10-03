@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FHH Vorgaben-Navigator – Fachverfahren</title>
+<style>
+  :root{
+    --bg:#f5f7fa;
+    --panel:#ffffff;
+    --text:#172033;
+    --muted:#687386;
+    --line:#dfe4ea;
+    --accent:#0b5cab;
+    --accent-soft:#eaf3fb;
+    --ok:#1f7a4d;
+    --warn:#9a6700;
+    --open:#b42318;
+    --shadow:0 8px 28px rgba(20,35,55,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  header{
+    background:linear-gradient(135deg,#12375b,#0b5cab);
+    color:white;padding:24px 32px;
+  }
+  header h1{margin:0 0 6px;font-size:26px}
+  header p{margin:0;opacity:.88;max-width:900px}
+  .wrap{max-width:1400px;margin:0 auto;padding:24px}
+  .toolbar{
+    display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px
+  }
+  .search{
+    flex:1;min-width:260px;padding:11px 13px;border:1px solid var(--line);
+    border-radius:10px;background:white;font-size:14px
+  }
+  .pill{
+    border:1px solid var(--line);background:white;border-radius:999px;padding:8px 12px;
+    cursor:pointer;font-size:13px
+  }
+  .pill.active{background:var(--accent);color:white;border-color:var(--accent)}
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px
+  }
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;
+    box-shadow:var(--shadow);cursor:pointer;transition:.15s transform,.15s box-shadow
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 12px 34px rgba(20,35,55,.12)}
+  .card h3{margin:0 0 8px;font-size:18px}
+  .card p{margin:0 0 12px;color:var(--muted);line-height:1.45}
+  .meta{display:flex;gap:8px;flex-wrap:wrap}
+  .tag{font-size:12px;border-radius:999px;padding:5px 8px;background:#eef2f6;color:#344054}
+  .tag.must{background:#fdecec;color:#9b1c1c}
+  .tag.should{background:#fff5d8;color:#8a5a00}
+  .tag.can{background:#eaf7ef;color:#186a3b}
+  .tag.open{background:#fff0f0;color:#a11}
+  .section-title{margin:26px 0 12px;font-size:15px;color:#46556a;text-transform:uppercase;letter-spacing:.04em}
+  .journey-wrap{background:white;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);margin-bottom:22px;overflow-x:auto}
+  .journey-source{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .journey-lane{display:grid;grid-template-columns:150px repeat(9,minmax(145px,1fr));gap:7px;min-width:1450px;align-items:stretch}
+  .lane-label{display:flex;align-items:center;font-weight:700;font-size:13px;color:#344054;padding:10px}
+  .journey-head{font-size:11px;color:#667085;text-align:center;padding:4px 6px;text-transform:uppercase}
+  .jstep{background:#f9fbfd;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;transition:.15s}
+  .jstep:hover{border-color:#9bc2e8;background:#f2f8fd;transform:translateY(-1px)}
+  .jstep strong{display:block;color:var(--text);font-size:13px;margin-bottom:5px}
+  .jstep span{font-size:11px;color:#667085;line-height:1.35}
+  .jstep.primary{background:#eef6fd;border-color:#bfd8ef}
+  .jstep.internal{background:#f7f8fa}
+  .journey-support{display:grid;grid-template-columns:150px 1fr;gap:7px;min-width:1450px;margin-top:9px}
+  .support-box{border:1px dashed #cbd5e1;border-radius:10px;padding:10px;background:#fcfcfd;font-size:12px;color:#475467}
+  .support-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+  .support-chip{padding:5px 8px;border-radius:999px;background:#eef2f6;font-size:11px;color:#344054}
+  .support-chip.low{background:#f2f0f7;color:#6941c6}
+  .journey-detail{display:none;border-top:1px solid var(--line);margin-top:12px;padding-top:14px}
+  .journey-detail.open{display:block}
+  .journey-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .drawer{
+    position:fixed;right:-760px;top:0;width:min(760px,100%);height:100vh;background:white;
+    box-shadow:-18px 0 50px rgba(0,0,0,.18);z-index:50;transition:right .25s ease;
+    overflow-y:auto
+  }
+  .drawer.open{right:0}
+  .overlay{position:fixed;inset:0;background:rgba(10,20,35,.42);display:none;z-index:40}
+  .overlay.show{display:block}
+  .drawer-head{position:sticky;top:0;background:white;border-bottom:1px solid var(--line);padding:18px 22px;z-index:2}
+  .drawer-head .close{float:right;border:0;background:#eef2f6;border-radius:8px;padding:8px 10px;cursor:pointer}
+  .drawer-body{padding:22px}
+  .drawer h2{margin:0 0 4px}
+  .subtitle{color:var(--muted);font-size:14px}
+  .box{border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0;background:#fbfcfd}
+  .box h4{margin:0 0 10px}
+  .how-list{display:grid;gap:10px}
+  .how{
+    display:grid;grid-template-columns:28px 1fr;gap:10px;background:white;border:1px solid var(--line);
+    border-radius:10px;padding:12px
+  }
+  .num{
+    width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:12px
+  }
+  .how b{display:block;margin-bottom:4px}
+  .how span{color:var(--muted);font-size:13px;line-height:1.45}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr.role-row{cursor:pointer}
+  tr.role-row:hover{background:#f6f9fc}
+  .role-link{color:var(--accent);font-weight:700}
+  .role-detail{display:none;background:#f8fbfe}
+  .role-detail.open{display:table-row}
+  .role-detail td{padding:0 10px 14px 10px}
+  .detail-panel{border:1px solid var(--line);border-radius:10px;background:white;padding:14px;margin-top:8px}
+  .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .task-list{display:grid;gap:8px;margin-top:10px}
+  .task-card{border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+  .task-head{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:11px 12px;cursor:pointer}
+  .task-head:hover{background:#f7fafe}
+  .task-title{font-weight:700}
+  .task-body{display:none;border-top:1px solid var(--line);padding:12px;background:#fbfcfd}
+  .task-body.open{display:block}
+  .task-body-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .task-body-grid .full{grid-column:1/-1}
+  .detail-item{border:1px solid var(--line);border-radius:9px;padding:10px;background:#fbfcfd}
+  .detail-item strong{display:block;font-size:12px;color:#516075;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+  .must-badge,.should-badge,.can-badge,.unclear-badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:700}
+  .must-badge{background:#fdecec;color:#9b1c1c}.should-badge{background:#fff5d8;color:#8a5a00}.can-badge{background:#eaf7ef;color:#186a3b}.unclear-badge{background:#eef2f6;color:#475467}
+  th{color:#506078;background:#f8fafc}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .status{font-weight:700}
+  .status.ok{color:var(--ok)} .status.warn{color:var(--warn)} .status.open{color:var(--open)}
+  .note{font-size:12px;color:var(--muted);margin-top:18px}
+  @media(max-width:900px){.journey{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>FHH Vorgaben-Navigator – Fachverfahren</h1>
+  <p>Von der Ende-zu-Ende-Journey zur konkreten Umsetzung: Nicht nur „was gilt?“, sondern „wie wird es umgesetzt, durch wen und mit welchem Nachweis?“</p><p style="font-size:12px;margin-top:8px;opacity:.9"><b>Evidenzregel:</b> Quelle/Verbindlichkeit werden getrennt von abgeleiteten Handlungsfolgen und typischen Projektfolgen dargestellt.</p>
+</header>
+
+<div class="wrap">
+  <div class="section-title">Abgeleitete Ende-zu-Ende-Sicht – auf Basis der Deutschland-Architektur</div>
+  <div class="journey-wrap">
+    <div class="journey-source">
+      Grundlage: Wertstrom <b>„Inanspruchnahme einer digitalen Verwaltungsleistung“</b> und Funktionsbausteine der Deutschland-Architektur. <b>Die 9 Schritte unten sind eine Navigator-Strukturierung und keine offiziell so beschlossene Schrittfolge.</b>
+      <a href="https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf" target="_blank">Originalquelle öffnen</a>
+    </div>
+
+    <div class="journey-lane">
+      <div class="lane-label"></div>
+      <div class="journey-head">1</div><div class="journey-head">2</div><div class="journey-head">3</div><div class="journey-head">4</div><div class="journey-head">5</div><div class="journey-head">6</div><div class="journey-head">7</div><div class="journey-head">8</div><div class="journey-head">9</div>
+
+      <div class="lane-label">Bürger / Unternehmen</div>
+      <div class="jstep primary" onclick="openJourney(0)"><strong>Leistung finden</strong><span>Zugang und relevante Verwaltungsleistung</span></div>
+      <div class="jstep primary" onclick="openJourney(1)"><strong>Identifizieren</strong><span>Authentifizierung / Vertretung</span></div>
+      <div class="jstep primary" onclick="openJourney(2)"><strong>Leistung initiieren</strong><span>Antrag bzw. Vorgang starten</span></div>
+      <div class="jstep primary" onclick="openJourney(3)"><strong>Daten & Nachweise</strong><span>eingeben, abrufen, bereitstellen</span></div>
+      <div class="jstep primary" onclick="openJourney(4)"><strong>Ein-/Auszahlung</strong><span>falls relevant</span></div>
+      <div class="jstep primary" onclick="openJourney(5)"><strong>Status & Interaktion</strong><span>Rückfragen, Mitteilungen, Status</span></div>
+      <div class="jstep primary" onclick="openJourney(6)"><strong>Entscheidung erhalten</strong><span>Bescheid / Ergebnis</span></div>
+      <div class="jstep primary" onclick="openJourney(7)"><strong>Nachlauf</strong><span>weitere Interaktion / Zugriff</span></div>
+      <div class="jstep primary" onclick="openJourney(8)"><strong>Feedback</strong><span>Nutzungserfahrung</span></div>
+
+      <div class="lane-label">Verwaltungsmitarbeitende</div>
+      <div class="jstep internal" onclick="openJourney(0)"><strong>Zuständigkeit</strong><span>Leistung / Stelle korrekt zuordnen</span></div>
+      <div class="jstep internal" onclick="openJourney(1)"><strong>Identität nutzen</strong><span>Identitätsdaten übernehmen</span></div>
+      <div class="jstep internal" onclick="openJourney(2)"><strong>Vorgang anlegen</strong><span>Initiierung in Bearbeitung überführen</span></div>
+      <div class="jstep internal" onclick="openJourney(3)"><strong>Daten übernehmen</strong><span>Nachweise / Daten strukturiert nutzen</span></div>
+      <div class="jstep internal" onclick="openJourney(4)"><strong>Zahlung verarbeiten</strong><span>falls fachlich erforderlich</span></div>
+      <div class="jstep internal" onclick="openJourney(5)"><strong>Vorgang bearbeiten</strong><span>Fachverfahren / Sachbearbeitung</span></div>
+      <div class="jstep internal" onclick="openJourney(6)"><strong>Entscheidung erzeugen</strong><span>Dokument / Signatur / Bekanntgabe</span></div>
+      <div class="jstep internal" onclick="openJourney(7)"><strong>Verakten</strong><span>elektronische Aktenführung</span></div>
+      <div class="jstep internal" onclick="openJourney(8)"><strong>Auswerten</strong><span>Nutzung / Qualität / Optimierung</span></div>
+    </div>
+
+    <div class="journey-support">
+      <div class="lane-label">Querschnitt / Bausteine</div>
+      <div class="support-box">
+        <div class="support-chips">
+          <span class="support-chip">Zentrales Nutzenden-Frontend</span><span class="support-chip">Postfach & Interaktion (G2C)</span>
+          <span class="support-chip">Datenaustausch</span><span class="support-chip">Daten & Nachweise</span>
+          <span class="support-chip">Elektronische Veraktung</span><span class="support-chip">Zentrale Verzeichnisse</span>
+          <span class="support-chip">Authentifizierung</span><span class="support-chip">Ein-/Auszahlung</span>
+          <span class="support-chip">Siegeln & Signieren</span><span class="support-chip">Statusmonitoring</span>
+          <span class="support-chip low">Vorgangs-/Sachbearbeitung · Reifegrad niedrig</span>
+          <span class="support-chip low">Eventverarbeitung antragslos · Reifegrad niedrig</span>
+          <span class="support-chip low">Integrationsplattform · Reifegrad niedrig</span>
+          <span class="support-chip low">Consent · Reifegrad niedrig</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="journey-detail" id="journeyDetail">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:start">
+        <div><h3 id="jTitle" style="margin:0 0 4px"></h3><div class="subtitle" id="jSubtitle"></div></div>
+        <button class="pill" onclick="closeJourney()">Schließen</button>
+      </div>
+      <div class="journey-detail-grid" id="jGrid" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input id="search" class="search" placeholder="Thema, Vorgabe oder Komponente suchen …" />
+    <button class="pill active" data-filter="all">Alle</button>
+    <button class="pill" data-filter="muss">MUSS</button>
+    <button class="pill" data-filter="soll">SOLL</button>
+    <button class="pill" data-filter="offen">Offen</button>
+  </div>
+
+  <div class="section-title">Querschnitts- und Umsetzungsthemen</div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <button class="close" id="closeBtn">✕</button>
+    <h2 id="dTitle">Thema</h2>
+    <div class="subtitle" id="dSub"></div><div class="note" style="margin-top:6px">Rolle anklicken → konkrete Aufgaben. Aufgabe anklicken → Pflichtgrad, Umsetzung, Nachweis und Quelle.</div>
+  </div>
+  <div class="drawer-body">
+    <div class="box">
+      <h4>Wie wird es umgesetzt?</h4>
+      <div class="how-list" id="dHow"></div>
+    </div>
+
+    <div class="box">
+      <h4>Verantwortung – konkrete Aufgaben</h4>
+      <table>
+        <thead><tr><th>Rolle</th><th>Aufgabenbereich</th><th>Nachweis / Artefakt</th></tr></thead>
+        <tbody id="dRoles"></tbody>
+      </table>
+    </div>
+
+    <div class="box" id="decisionBox" style="display:none">
+      <h4>Entscheidungsmatrix: Pflicht, Spielraum und Konsequenzen</h4>
+      <div id="dFramework" class="framework"></div>
+      <div id="dConsequences"></div>
+      <div id="dImpacts" style="margin-top:12px"></div>
+    </div>
+
+    <div class="box">
+      <h4>Offene Punkte / Nachschärfung</h4>
+      <div id="dOpen"></div>
+    </div>
+
+    <div class="box">
+      <h4>Quelle</h4>
+      <div id="dSource"></div>
+    </div>
+
+    <div class="note">Hinweis: Dieser Prototyp demonstriert die Struktur und Interaktion. Verbindlichkeit und Geltungsbereich jeder Vorgabe müssen vor produktivem Einsatz quellengenau validiert werden.</div>
+  </div>
+</aside>
+
+<script>
+
+
+const journeyData = [
+  {
+    title:"1 · Leistung finden / Zuständigkeit",
+    subtitle:"Einstieg in die Verwaltungsleistung",
+    customer:"Bürger und Unternehmen benötigen einen eindeutigen Zugang zur relevanten Verwaltungsleistung.",
+    admin:"Die Verwaltung muss Leistung und Zuständigkeit so beschreiben, dass der richtige Zugang gefunden werden kann.",
+    blocks:["Zentrales Nutzenden-Frontend","Zuständigkeitsfindung / Zentrale Verzeichnisse"],
+    fixed:"Die Deutschland-Architektur sieht zentrale Frontend- und Verzeichnisfunktionen als Bausteine der Ende-zu-Ende-Leistung vor.",
+    interpret:"Wie diese Funktionen innerhalb der FHH konkret organisatorisch und technisch umgesetzt werden, ist durch die Deutschland-Architektur selbst nicht abschließend festgelegt.",
+    open:"Für den Prototypen ist keine belastbare FHH-Quelle hinterlegt, die eine einheitliche technische Umsetzung dieses Schritts verbindlich vorgibt.",
+    itd:"ITD sollte – sofern intern so beauftragt – die zentrale Auslegung und Wiederverwendung solcher Zugangs- und Verzeichnisbausteine konkretisieren.",
+    authority:"Behörden müssen sicherstellen, dass ihre Leistung fachlich korrekt beschrieben und der zuständige Zugang eindeutig nutzbar ist.",
+    projects:[
+      {name:"HELP",status:"aktiv",contribution:"Analysiert Verwaltungsprozesse und Fachverfahren und stößt Umsetzungsprojekte an; damit grundsätzlich relevant für Auffindbarkeit, Zuständigkeit und Prozessvereinfachung.",owner:"FHH / öffentlich beschrieben",url:"https://digital.hamburg.de/digitale-stadt/projekt-help-850084"}
+    ],
+    projects:[
+      {name:"Registermodernisierung",status:"aktiv",contribution:"Schafft Voraussetzungen für digitale Nachweis- und Identitätsprozesse sowie die Wiederverwendung verlässlicher Registerdaten.",owner:"FHH im föderalen Kontext",url:"https://digital.hamburg.de/digitale-stadt/die-projektpartner-umsetzungskompetenz-fuer-hamburgs-digitalstrategie-1209622"}
+    ],
+    projects:[
+      {name:"einfach.hamburg",status:"aktiv",contribution:"Bündelt Arbeitspakete zur Vereinfachung und Beschleunigung von Planungs-, Genehmigungs- und Verwaltungsverfahren und zahlt damit direkt auf die Initiierung und Prozessgestaltung ein.",owner:"FHH",url:"https://digital.hamburg.de/digitale-stadt/digitalministerkonferenz/neues-aus-den-laendern-1124724"},
+      {name:"HELP",status:"aktiv",contribution:"Untersucht Prozesse und Fachverfahren und identifiziert Umsetzungsmaßnahmen.",owner:"FHH",url:"https://digital.hamburg.de/digitale-stadt/projekt-help-850084"}
+    ],
+    projects:[
+      {name:"Registermodernisierung",status:"aktiv",contribution:"Unterstützt die Wiederverwendung von Daten und Nachweisen und adressiert damit zentrale Once-Only-/Datenaustausch-Bausteine.",owner:"FHH im föderalen Kontext",url:"https://digital.hamburg.de/digitale-stadt/die-projektpartner-umsetzungskompetenz-fuer-hamburgs-digitalstrategie-1209622"}
+    ],
+    projects:[],
+    projects:[
+      {name:"HELP",status:"aktiv",contribution:"Analysiert interne Bearbeitungsprozesse und Fachverfahren; daraus können Maßnahmen zur Reduktion von Medienbrüchen und manuellen Schritten entstehen.",owner:"FHH",url:"https://digital.hamburg.de/digitale-stadt/projekt-help-850084"},
+      {name:"einfach.hamburg",status:"aktiv",contribution:"Adressiert Vereinfachung und Beschleunigung von Verwaltungsverfahren und damit auch interne Bearbeitungsabläufe.",owner:"FHH",url:"https://digital.hamburg.de/digitale-stadt/digitalministerkonferenz/neues-aus-den-laendern-1124724"}
+    ],
+    projects:[],
+    projects:[
+      {name:"E-Akte 2030",status:"aktiv",contribution:"Zahlt unmittelbar auf elektronische Veraktung und die Modernisierung der digitalen Aktenführung ein.",owner:"FHH",url:"https://digital.hamburg.de/digitale-stadt/die-projektpartner-umsetzungskompetenz-fuer-hamburgs-digitalstrategie-1209622"}
+    ],
+    source:"https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf"
+  },
+  {
+    title:"2 · Identifizieren / Authentifizieren",
+    subtitle:"Identität als Querschnittsfunktion",
+    customer:"Nutzende weisen ihre Identität nach; je Leistung kann auch Vertretung relevant sein.",
+    admin:"Identitätsinformationen müssen für die weitere Bearbeitung verwertbar sein.",
+    blocks:["Authentifizierung","Zentrales Nutzenden-Frontend"],
+    fixed:"Authentifizierung ist in der Deutschland-Architektur als eigener Funktionsbaustein vorgesehen.",
+    interpret:"Die Deutschland-Architektur legt nicht für jede Verwaltungsleistung fest, welches konkrete Vertrauensniveau oder welcher konkrete Identitätsdienst zu verwenden ist.",
+    open:"Die konkrete FHH-Verbindlichkeit für Vertrauensniveau, Identitätsdienst und Vertretung ist in diesem Prototypen noch nicht mit einer belastbaren FHH-Quelle belegt.",
+    itd:"ITD sollte zentrale Vorgaben für zulässige Identitätsdienste und deren Einsatzbereiche transparent machen, sofern hierfür eine interne Zuständigkeit besteht.",
+    authority:"Behörden müssen aus Fachrecht und Verfahrensanforderungen ableiten, welches Identitätsniveau tatsächlich erforderlich ist.",
+    source:"https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf"
+  },
+  {
+    title:"3 · Verwaltungsleistung initiieren",
+    subtitle:"Antrag oder sonstige Initiierung",
+    customer:"Nutzende starten eine Verwaltungsleistung digital.",
+    admin:"Aus der Initiierung muss ein bearbeitbarer fachlicher Vorgang entstehen.",
+    blocks:["Initiierung einer Verwaltungsleistung","Vorgangs-/Sachbearbeitung [Reifegrad niedrig]"],
+    fixed:"Die Deutschland-Architektur betrachtet die Initiierung einer Verwaltungsleistung als eigenständige Funktion.",
+    interpret:"Sie schreibt nicht pauschal vor, dass jede Leistung zwingend über ein klassisches Formular oder denselben technischen Kanal gestartet werden muss.",
+    open:"Für die konkrete Übergabe in das Fachverfahren ist im Prototypen noch keine allgemeingültige FHH-Vorgabe hinterlegt.",
+    itd:"ITD kann hier zentrale Integrations- und Referenzmuster vorgeben, sofern diese intern verbindlich festgelegt sind.",
+    authority:"Behörden müssen festlegen, welche fachlichen Daten bei Start der Leistung benötigt werden und wie daraus der fachliche Vorgang entsteht.",
+    source:"https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf"
+  },
+  {
+    title:"4 · Daten & Nachweise",
+    subtitle:"Datenbereitstellung und Datenaustausch",
+    customer:"Daten und Nachweise sollen möglichst ohne unnötige Mehrfacheingaben bereitgestellt werden können.",
+    admin:"Daten müssen strukturiert und rechtmäßig in die Bearbeitung übernommen werden können.",
+    blocks:["Abruf/Bereitstellung von Daten und Nachweisen","Datenaustausch","Zentrale Verzeichnisse"],
+    fixed:"Die Deutschland-Architektur sieht Abruf/Bereitstellung von Daten und Nachweisen sowie Datenaustausch als zentrale Funktionsbausteine vor.",
+    interpret:"Ob ein konkreter Nachweis automatisiert abgerufen werden darf oder muss, ergibt sich nicht aus der Architektur allein, sondern aus Fachrecht, Datenschutz und gegebenenfalls konkreten Standards.",
+    open:"Eine pauschale FHH-Pflicht zur Nutzung bestimmter Register oder Austauschstandards ist für diesen Prototypen nicht belegt.",
+    itd:"ITD sollte wiederverwendbare Datenaustausch- und Integrationsmuster transparent bereitstellen, sofern verbindlich eingeführt.",
+    authority:"Behörden müssen fachlich begründen, welche Nachweise tatsächlich erforderlich sind und welche Daten rechtmäßig wiederverwendet werden können.",
+    source:"https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf"
+  },
+  {
+    title:"5 · Ein- und Auszahlung",
+    subtitle:"Optionaler fachlicher Schritt",
+    customer:"Gebühren oder Auszahlungen werden digital abgewickelt, wenn sie Bestandteil der Leistung sind.",
+    admin:"Zahlungsinformationen müssen dem Vorgang korrekt zugeordnet werden.",
+    blocks:["Ein- und Auszahlung"],
+    fixed:"Ein- und Auszahlung ist in der Deutschland-Architektur als eigener Funktionsbaustein vorgesehen.",
+    interpret:"Die Architektur legt nicht fest, dass jede Verwaltungsleistung diesen Baustein benötigt.",
+    open:"Welcher konkrete Dienst innerhalb der FHH zu verwenden ist, ist in diesem Prototypen noch nicht mit einer belastbaren Quelle belegt.",
+    itd:"ITD kann zentrale Zahlungsdienste und Integrationsvorgaben vorgeben, sofern diese verbindlich eingeführt sind.",
+    authority:"Behörden müssen klären, ob Zahlung fachlich erforderlich ist und wie sie in den Gesamtprozess eingebunden wird.",
+    source:"https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf"
+  },
+  {
+    title:"6 · Vorgang bearbeiten / Interaktion",
+    subtitle:"Interne Fachbearbeitung",
+    customer:"Nutzende erhalten Rückfragen, Mitteilungen und Statusinformationen.",
+    admin:"Verwaltungsmitarbeitende bearbeiten den Fachvorgang und lösen notwendige Interaktionen aus.",
+    blocks:["Vorgangs-/Sachbearbeitung [Reifegrad niedrig]","Postfach & Interaktion (G2C)","Statusmonitoring","Datenaustausch"],
+    fixed:"Die Deutschland-Architektur ordnet Postfach/Interaktion und Statusmonitoring als Funktionsbausteine ein.",
+    interpret:"Der Baustein Vorgangs-/Sachbearbeitung ist in der veröffentlichten Fassung noch mit niedrigem Reifegrad gekennzeichnet; daraus folgt keine vollständige operative Vorgabe für jedes Fachverfahren.",
+    open:"Eine einheitliche FHH-Vorgabe für interne Bearbeitungslogik, Workflow und Automatisierungsgrad ist in diesem Prototypen nicht belegt.",
+    itd:"ITD sollte zentrale Muster für Interaktion, Status und gegebenenfalls Workflow konkretisieren, wenn diese innerhalb der FHH verbindlich festgelegt werden.",
+    authority:"Behörden müssen den fachlichen Sollprozess definieren und entscheiden, welche Schritte automatisiert bzw. manuell bleiben dürfen.",
+    source:"https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf"
+  },
+  {
+    title:"7 · Entscheidung / Bekanntgabe",
+    subtitle:"Ergebnis des Verwaltungsprozesses",
+    customer:"Nutzende erhalten Bescheid oder anderes Ergebnis digital.",
+    admin:"Die Entscheidung wird erzeugt und über einen geeigneten Kanal bekanntgegeben.",
+    blocks:["Siegeln & Signieren","Postfach & Interaktion (G2C)","Statusmonitoring"],
+    fixed:"Siegeln/Signieren sowie digitale Interaktion sind in der Deutschland-Architektur als Funktionsbausteine vorgesehen.",
+    interpret:"Ob eine Signatur, ein Siegel oder eine bestimmte Form der Bekanntgabe erforderlich ist, bestimmt nicht die Architektur, sondern das jeweilige Fach- und Verfahrensrecht.",
+    open:"Eine pauschale FHH-Regel, dass jede Entscheidung auf dieselbe Weise digital bekanntzugeben ist, ist in diesem Prototypen nicht belegt.",
+    itd:"ITD kann technische Dienste für Signatur, Siegel und digitale Zustellung bereitstellen bzw. standardisieren, sofern dies intern verbindlich geregelt ist.",
+    authority:"Behörden müssen die rechtlich zulässige und erforderliche Form der Entscheidung und Bekanntgabe für ihr Verfahren bestimmen.",
+    source:"https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf"
+  },
+  {
+    title:"8 · Verakten / Nachlauf",
+    subtitle:"Digitale Aktenführung",
+    customer:"Nutzende können je nach Verfahren weiter auf Nachrichten, Bescheide oder Status zugreifen.",
+    admin:"Relevante Informationen und Dokumente werden nachvollziehbar in die Aktenführung überführt.",
+    blocks:["Elektronische Veraktung","Postfach & Interaktion (G2C)"],
+    fixed:"Elektronische Veraktung ist in der Deutschland-Architektur als Funktionsbaustein vorgesehen.",
+    interpret:"Welche Unterlagen konkret aktenrelevant sind und welche Aufbewahrungsfristen gelten, ergibt sich nicht aus der Deutschland-Architektur allein.",
+    open:"Für den Prototypen ist noch keine konkrete FHH-Vorgabe zur technischen Übergabe aus Fachverfahren in die E-Akte hinterlegt.",
+    itd:"ITD sollte – sofern zuständig – verbindliche Integrationsmuster zur E-Akte bereitstellen.",
+    authority:"Behörden müssen festlegen, welche Informationen aktenrelevant sind und wie Fachverfahren und Aktenführung zusammenspielen.",
+    source:"https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf"
+  },
+  {
+    title:"9 · Feedback / Nutzungsanalyse",
+    subtitle:"Kontinuierliche Verbesserung",
+    customer:"Nutzende können Nutzungserfahrungen zurückmelden.",
+    admin:"Feedback und Nutzungsinformationen können zur Weiterentwicklung ausgewertet werden.",
+    blocks:["Feedback und Nutzungsanalyse","Statusmonitoring"],
+    fixed:"Feedback und Nutzungsanalyse werden in der Deutschland-Architektur als unterstützende Funktionen berücksichtigt.",
+    interpret:"Die Architektur definiert nicht abschließend, welche Kennzahlen erhoben werden sollen oder wie diese organisatorisch zu nutzen sind.",
+    open:"Eine verbindliche FHH-Vorgabe zu einem einheitlichen Kennzahlenset ist in diesem Prototypen nicht belegt.",
+    itd:"ITD kann zentrale Kennzahlen und Auswertungsstandards definieren, sofern diese intern verbindlich festgelegt werden.",
+    authority:"Behörden sollten nur solche Daten erheben, die rechtlich zulässig und für die Verbesserung der Leistung tatsächlich erforderlich sind.",
+    projects:[
+      {name:"HELP",status:"aktiv",contribution:"Kann durch Prozess- und Fachverfahrensanalysen Erkenntnisse für Verbesserungen und Priorisierung liefern.",owner:"FHH",url:"https://digital.hamburg.de/digitale-stadt/projekt-help-850084"}
+    ],
+    source:"https://www.it-planungsrat.de/fileadmin/beschluesse/2026/Beschluss_2026_04_Deutschland-Architektur_Zusammenfassung.pdf"
+  }
+];
+
+function openJourney(i){
+  const x=journeyData[i];
+  document.getElementById('jTitle').textContent=x.title;
+  document.getElementById('jSubtitle').textContent=x.subtitle;
+  document.getElementById('jGrid').innerHTML=`
+    <div class="detail-item"><strong>Bürger / Unternehmen</strong>${x.customer}</div>
+    <div class="detail-item"><strong>Verwaltungsmitarbeitende</strong>${x.admin}</div>
+    <div class="detail-item"><strong>D-Architektur-Bausteine</strong>${x.blocks.map(b=>`<span class="tag" style="display:inline-block;margin:2px">${b}</span>`).join('')}</div>
+
+    <div class="detail-item" style="grid-column:1/-1">
+      <div class="state-row"><div class="state-label state-fixed">Festgelegt</div><div>${x.fixed}</div></div>
+      <div class="state-row"><div class="state-label state-interpret">Interpretationsraum</div><div>${x.interpret}</div></div>
+      <div class="state-row"><div class="state-label state-open">Nicht festgelegt</div><div>${x.open}</div></div>
+    </div>
+
+    <div class="detail-item"><strong>Abgeleitete Handlungsfolge für ITD</strong>${x.itd}</div>
+    <div class="detail-item"><strong>Abgeleitete Handlungsfolge für Behörde</strong>${x.authority}</div>
+    <div class="detail-item"><strong>Quelle</strong><a href="${x.source}" target="_blank" rel="noopener">Deutschland-Architektur öffnen</a></div>
+
+    <div class="detail-item" style="grid-column:1/-1">
+      <strong>Beitragende Vorhaben / Projekte</strong><div class="subtitle" style="margin-top:4px">Die Zuordnung zum Journey-Schritt ist eine Navigator-Ableitung, sofern die Quelle den Schritt nicht ausdrücklich nennt.</div>
+      <div class="projects" style="margin-top:8px">
+        ${(x.projects && x.projects.length) ? x.projects.map(p=>`
+          <div class="project">
+            <div class="project-top">
+              <div class="project-name">${p.name}</div>
+              <span class="project-status">${p.status}</span>
+            </div>
+            <p>${p.contribution}</p>
+            <small>${p.owner}</small><br>
+            <a href="${p.url}" target="_blank" rel="noopener">Quelle zum Vorhaben</a>
+          </div>
+        `).join('') : '<div class="subtitle">Kein öffentlich belastbar zugeordnetes Vorhaben hinterlegt.</div>'}
+      </div>
+    </div>
+  `;
+  document.getElementById('journeyDetail').classList.add('open');
+  document.getElementById('journeyDetail').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function closeJourney(){document.getElementById('journeyDetail').classList.remove('open')}
+
+const data = [
+  {
+    title:"Digitale Barrierefreiheit",
+    area:"Frontend / Onlinedienst",
+    level:"MUSS",
+    status:"muss",
+    summary:"Umsetzung in Web-/App-Oberflächen öffentlicher Stellen.",
+    how:[
+      ["Anforderungen früh einplanen","Barrierefreiheit bereits in UX, Design-System und Beschaffung berücksichtigen – nicht erst vor Go-Live prüfen."],
+      ["Komponenten testen","Formulare, Navigation, Kontraste, Tastaturbedienung, Fokusführung und Screenreader-Nutzung prüfen."],
+      ["Abnahme definieren","Barrierefreiheitsprüfung als verbindlichen Bestandteil von Test und Freigabe aufnehmen."],
+      ["Mängel nachhalten","Festgestellte Abweichungen mit Verantwortlichen, Frist und Re-Test dokumentieren."]
+    ],
+    roles:[
+      {
+        role:"ITD",
+        task:"zentrale Leitplanken, Standards und Wiederverwendung unterstützen",
+        evidence:"Standard / Prüfschema / zentrale Hilfestellung",
+        obligation:"SOLL / je interner Vorgabe zu prüfen",
+        badge:"should",
+        steps:["zentrale Mindestanforderungen definieren","Design-/Komponentenstandards bereitstellen","Prüf- und Abnahmeverfahren harmonisieren","Abweichungen transparent dokumentieren"],
+        when:"vor Beschaffung, vor Go-Live, bei wesentlichen Änderungen",
+        source:"https://www.hamburg.de/politik-und-verwaltung/gesetze-43460",
+        note:"Die rechtliche Pflicht trifft öffentliche Stellen; welche konkrete operative Rolle ITD übernimmt, muss aus FHH-internen Zuständigkeiten abgeleitet werden."
+      },
+      {
+        role:"Behörde",
+        task:"Barrierefreiheit für das konkrete Angebot sicherstellen",
+        evidence:"Prüfbericht / Abnahme / dokumentierte Mängelbeseitigung",
+        obligation:"MUSS",
+        badge:"must",
+        steps:["betroffene Oberfläche identifizieren","Anforderungen in Beschaffung/Fachkonzept aufnehmen","Barrierefreiheit testen lassen","Mängel vor Freigabe beheben oder belastbar behandeln"],
+        when:"vor Veröffentlichung bzw. Go-Live und bei relevanten Änderungen",
+        source:"https://www.hamburg.de/politik-und-verwaltung/gesetze-43460",
+        note:"Verpflichtung gilt nur im konkreten gesetzlichen Anwendungsbereich."
+      },
+      {
+        role:"Projekt / Dienstleister",
+        task:"barrierefreie technische Umsetzung liefern",
+        evidence:"Testfälle / Prüfergebnis / Fehlerbehebung",
+        obligation:"MUSS, soweit vertraglich/gesetzlich für die Leistung vorgegeben",
+        badge:"must",
+        steps:["Anforderungen implementieren","automatisierte und manuelle Tests durchführen","Fehler priorisieren und beheben","Nachweis an Auftraggeber übergeben"],
+        when:"während Entwicklung und vor Abnahme",
+        source:"https://www.hamburg.de/politik-und-verwaltung/gesetze-43460",
+        note:"Die konkrete Pflicht des Dienstleisters ergibt sich zusätzlich aus Vertrag und Leistungsbeschreibung."
+      }
+    ],
+    open:"Zu prüfen: Welche zentralen FHH-Prüfverfahren, Design-Systeme oder verbindlichen Qualitätsgates gelten konkret für das jeweilige Vorhaben?",
+    framework:"Verpflichtend sind die einschlägigen gesetzlichen Anforderungen an digitale Barrierefreiheit im jeweiligen Anwendungsbereich. Hamburgs praktische Hinweise zur IT-Vergabe nennen u. a. EN 301 549, WCAG/BITV-Testverfahren und Umsetzungshilfen, weisen aber ausdrücklich darauf hin, dass diese praktischen Hinweise selbst nicht rechtsverbindlich sind. Spielraum besteht bei der technischen Umsetzung, soweit die verbindlichen Kriterien erfüllt werden.",
+    consequences:[
+      {criterion:"Tastaturbedienung",low:"Standard-Komponenten sind vollständig per Tastatur nutzbar.",mid:"zusätzliche Fokuslogik und Sonderkomponenten müssen angepasst werden.",high:"komplexe Interaktionen benötigen individuelle Tastatur- und Fokuskonzepte sowie intensivere Tests."},
+      {criterion:"Screenreader / Semantik",low:"semantisch saubere Standard-UI ausreichend.",mid:"dynamische Inhalte und komplexe Formulare benötigen zusätzliche ARIA-/Strukturmaßnahmen.",high:"stark dynamische Anwendungen benötigen detaillierte Accessibility-Logik und wiederholte Tests mit assistiven Technologien."},
+      {criterion:"Kontraste / visuelle Wahrnehmbarkeit",low:"Designsystem erfüllt Vorgaben.",mid:"individuelle Komponenten und Zustände müssen nachgeprüft/angepasst werden.",high:"komplexe Visualisierungen benötigen Alternativdarstellungen und zusätzliche Design-/Testaufwände."}
+    ],
+    impacts:[
+      {level:"Standard",arch:"Nutzung barrierefreier Standardkomponenten",cost:"geringe Mehrkosten",time:"geringe Zusatzlaufzeit",proof:"Standardprüfung / Abnahme"},
+      {level:"Erhöhte Komplexität",arch:"zusätzliche UI-/Frontend-Anpassungen",cost:"höhere Entwicklungs- und Testkosten",time:"mehr UX-, Entwicklungs- und Testzeit",proof:"erweiterte manuelle/assistive Tests"},
+      {level:"Hohe Komplexität",arch:"individuelle Accessibility-Lösungen",cost:"deutlich höhere Entwicklungs- und Wartungskosten",time:"längere Umsetzung und Nachbesserung",proof:"umfangreiche Prüfberichte / Re-Tests"}
+    ],
+    source:"https://www.hamburg.de/politik-und-verwaltung/gesetze-43460"
+  },
+  {
+    title:"Datenschutz",
+    area:"Gesamtes Fachverfahren",
+    level:"MUSS",
+    status:"muss",
+    summary:"Personenbezogene Verarbeitung muss für den konkreten Zweck und Geltungsbereich rechtmäßig gestaltet werden.",
+    how:[
+      ["Datenflüsse modellieren","Erfassen, welche personenbezogenen Daten wo erhoben, verarbeitet, übertragen und gespeichert werden."],
+      ["Rechtsgrundlage zuordnen","Jeden wesentlichen Verarbeitungsschritt einer belastbaren Rechtsgrundlage und einem Zweck zuordnen."],
+      ["Schutzmaßnahmen ableiten","Zugriffe, Löschung, Protokollierung, Aufbewahrung und technische Schutzmaßnahmen festlegen."],
+      ["Änderungen erneut bewerten","Neue Schnittstellen, Datennutzungen oder Anbieter als Änderungsereignis behandeln."]
+    ],
+    roles:[
+      {
+        role:"ITD",
+        task:"zentrale technische und architektonische Leitplanken unterstützen",
+        evidence:"Muster / Standards / Plattformvorgaben",
+        obligation:"SOLL / interne Zuständigkeit zu prüfen",
+        badge:"should",
+        steps:["wiederverwendbare Datenschutz-by-Design-Vorgaben definieren","zentrale Plattformdienste datenschutzgerecht gestalten","technische Mindeststandards dokumentieren","Änderungen zentraler Dienste transparent machen"],
+        when:"bei Plattformdesign, Architekturvorgaben und zentralen Services",
+        source:"https://datenschutz-hamburg.de/rechtliches/hamburgisches-datenschutz-gesetz",
+        note:"Die Verantwortung für die konkrete Verarbeitung liegt nicht automatisch bei ITD."
+      },
+      {
+        role:"Behörde",
+        task:"Zweck, Rechtsgrundlage und Erforderlichkeit verantworten",
+        evidence:"Verzeichnis / Fachkonzept / Datenschutzfreigabe",
+        obligation:"MUSS",
+        badge:"must",
+        steps:["Verarbeitungszwecke festlegen","Rechtsgrundlage prüfen","Datenminimierung und Aufbewahrung definieren","ggf. DSFA-Bedarf prüfen","Verantwortlichkeiten dokumentieren"],
+        when:"vor Einführung und bei wesentlichen Änderungen",
+        source:"https://datenschutz-hamburg.de/rechtliches/hamburgisches-datenschutz-gesetz",
+        note:"Zusätzlich ist immer das jeweilige Fachrecht zu prüfen."
+      },
+      {
+        role:"Projekt / Betrieb",
+        task:"technische und organisatorische Maßnahmen umsetzen",
+        evidence:"Berechtigungskonzept / Löschkonzept / Protokollierung",
+        obligation:"MUSS, soweit aus Datenschutzanforderungen abgeleitet",
+        badge:"must",
+        steps:["Rollen/Berechtigungen umsetzen","Lösch- und Sperrmechanismen implementieren","Protokollierung passend konfigurieren","Auftragsverarbeitung und Datenflüsse technisch absichern"],
+        when:"während Umsetzung und Betrieb",
+        source:"https://datenschutz-hamburg.de/rechtliches/hamburgisches-datenschutz-gesetz",
+        note:"Konkrete Maßnahmen hängen von Verarbeitung, Risiko und Rechtsgrundlage ab."
+      }
+    ],
+    open:"Zu prüfen: Welche zusätzlichen fachrechtlichen Vorgaben gelten für das konkrete Verfahren und welche FHH-internen Standards konkretisieren die technische Umsetzung?",
+    framework:"Verpflichtend sind Rechtmäßigkeit, Zweckbindung, Datenminimierung und angemessene technische/organisatorische Maßnahmen. Ermessensspielraum besteht bei der Auswahl geeigneter Maßnahmen, sofern das erforderliche Schutzniveau nachweisbar erreicht wird.",
+    consequences:[
+      {criterion:"Risiko der Verarbeitung",low:"Auch bei niedrigerem Risiko sind angemessene technische und organisatorische Maßnahmen erforderlich.",mid:"Mit steigendem Risiko müssen die Maßnahmen entsprechend stärker bzw. spezifischer ausfallen.",high:"Bei voraussichtlich hohem Risiko für Rechte und Freiheiten ist vorab eine Datenschutz-Folgenabschätzung nach Art. 35 DSGVO erforderlich."},
+      {criterion:"Art / Umfang / Umstände / Zweck",low:"Diese Faktoren sind gemeinsam zu bewerten; der reine Datenumfang entscheidet nicht allein.",mid:"z. B. größere Reichweite, sensiblere Daten, neue Technologien oder stärkere Auswirkungen können das Risiko erhöhen.",high:"Die Kombination mehrerer Risikofaktoren kann zu deutlich höheren Schutz- und Dokumentationsanforderungen führen."}
+    ],
+    impacts:[
+      {level:"Niedriges Risiko",arch:"risikoadäquate Datenschutzmaßnahmen",cost:"geringe Zusatzkosten",time:"geringe Zusatzlaufzeit",proof:"erforderliche Dokumentation / Nachweis der Angemessenheit"},
+      {level:"Erhöhtes Risiko",arch:"zusätzliche Schutz- und Trennmechanismen",cost:"höhere Entwicklungs-/Betriebskosten",time:"mehr Abstimmung und Test",proof:"erweiterte Datenschutzdokumentation"},
+      {level:"Hohes Risiko",arch:"stark abgesicherte Verarbeitung",cost:"deutlich höhere Projekt- und Betriebskosten",time:"längere Freigabe-/Umsetzungszeit",proof:"ggf. DSFA und umfangreiche Nachweise"}
+    ],
+    source:"https://datenschutz-hamburg.de/rechtliches/hamburgisches-datenschutz-gesetz"
+  },
+  {
+    title:"Informationssicherheit",
+    area:"Fachverfahren / Betrieb",
+    level:"FHH-Verbindlichkeit: Quelle noch zu belegen",
+    status:"offen",
+    summary:"BSI-Grundschutz liefert eine Methode zur Schutzbedarfsfeststellung. Welche FHH-interne Sicherheitsvorgabe diese Methode bzw. konkrete Maßnahmen verbindlich macht, muss separat belegt werden.",
+    how:[
+      ["Schutzbedarf bestimmen","Geschäftsprozess, Daten und technische Komponenten hinsichtlich Vertraulichkeit, Integrität und Verfügbarkeit bewerten."],
+      ["Risiken analysieren","Bedrohungen, Abhängigkeiten und Ausfallfolgen für das konkrete Verfahren erfassen."],
+      ["Maßnahmen umsetzen","Technische und organisatorische Maßnahmen aus Risiko und geltenden FHH-Vorgaben ableiten."],
+      ["Wirksamkeit nachweisen","Prüfung, Betriebskontrollen und Behandlung offener Risiken dokumentieren."]
+    ],
+    roles:[
+      {
+        role:"ITD",
+        task:"zentrale Methodik und Sicherheitsleitplanken steuern",
+        evidence:"Leitlinie / Rahmenwerk / zentrale Vorgaben",
+        obligation:"MUSS, soweit interne FHH-Regelung dies festlegt",
+        badge:"must",
+        steps:["verbindliche Mindestmethodik definieren","zentrale Sicherheitsanforderungen pflegen","Sicherheitsvorgaben in Architektur/Beschaffung integrieren","Ausnahmen und Eskalationswege definieren"],
+        when:"laufend, insbesondere bei neuen/angepassten zentralen Vorgaben",
+        source:"https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/IT-Grundschutz/it-grundschutz_node.html",
+        note:"Nicht aus BSI-Grundschutz allein auf FHH-Verbindlichkeit schließen."
+      },
+      {
+        role:"Behörde",
+        task:"Schutzbedarf und fachliche Auswirkungen verantworten",
+        evidence:"Schutzbedarfsfeststellung / Risikoentscheidung",
+        obligation:"MUSS",
+        badge:"must",
+        steps:["Schutzobjekte bestimmen","Schutzbedarf festlegen","Risiken bewerten","Rest-Risiken entscheiden bzw. eskalieren","Sicherheitsanforderungen an Projekt/Betrieb übergeben"],
+        when:"vor Einführung und bei wesentlichen Änderungen",
+        source:"https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/IT-Grundschutz/it-grundschutz_node.html",
+        note:"Die konkrete FHH-Verbindlichkeit muss durch interne Sicherheitsvorgaben belegt werden."
+      },
+      {
+        role:"Betrieb / Dienstleister",
+        task:"Sicherheitsmaßnahmen technisch betreiben und nachweisen",
+        evidence:"Betriebsnachweis / Monitoring / Audit",
+        obligation:"MUSS, soweit aus Vorgaben/Vertrag abgeleitet",
+        badge:"must",
+        steps:["technische Maßnahmen umsetzen","Monitoring/Logging betreiben","Schwachstellen und Vorfälle behandeln","Wirksamkeitsnachweise liefern"],
+        when:"laufend im Betrieb",
+        source:"https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/IT-Grundschutz/it-grundschutz_node.html",
+        note:"Welche konkreten Maßnahmen verpflichtend sind, hängt vom festgestellten Schutzbedarf und den FHH-Vorgaben ab."
+      }
+    ],
+    open:"Nicht pauschal aus BSI-Grundschutz ableiten: Es muss jeweils geprüft werden, welche FHH-internen Vorgaben und welcher konkrete Geltungsbereich verbindlich sind.",
+    framework:"BSI-Grundschutz unterscheidet Schutzbedarf nach Vertraulichkeit, Integrität und Verfügbarkeit in den Kategorien normal, hoch und sehr hoch. Welche FHH-internen Verfahren und Maßnahmen daraus verbindlich folgen, ist im Prototypen noch nicht mit einer öffentlichen FHH-Quelle belegt. Konkrete Maßnahmen sind aus Schutzbedarf und Risiko abzuleiten, nicht allein aus der Kategorie.",
+    consequences:[
+      {criterion:"Verfügbarkeit",low:"Standardbetrieb; übliche Backup-/Restore-Vorsorge.",mid:"möglicherweise zusätzliche Redundanz, engere Wiederanlaufziele und intensivere Restore-/Notfalltests; konkrete Maßnahmen sind risikobasiert festzulegen.",high:"möglicherweise hochverfügbare bzw. stärker redundante Architektur und engere Wiederanlaufziele; geografische Redundanz, 24/7-Betrieb oder konkrete RTO/RPO sind nicht automatisch aus der Kategorie abzuleiten."},
+      {criterion:"Vertraulichkeit",low:"Standard-Berechtigungen und Basisschutz.",mid:"möglicherweise stärkere Zugriffstrennung, Verschlüsselung und restriktivere Administration; konkrete Maßnahmen sind abzuleiten.",high:"möglicherweise deutlich strengere Zugriffs-, Schlüssel- und Administrationskontrollen; konkrete Betriebs-/Standortvorgaben sind gesondert zu begründen."},
+      {criterion:"Integrität",low:"Standard-Protokollierung und Änderungsnachvollziehbarkeit.",mid:"möglicherweise erweiterte Protokollierung oder zusätzliche Freigabemechanismen.",high:"möglicherweise stärkere Maßnahmen gegen unbemerkte Änderungen sowie intensivere Prüf- und Nachweisverfahren; konkrete Maßnahmen sind aus der Risikobetrachtung abzuleiten."}
+    ],
+    impacts:[
+      {level:"Niedrig / Standard",arch:"Standardarchitektur",cost:"niedrigere Betriebskosten",time:"geringere Zusatzlaufzeit",proof:"Standardnachweise"},
+      {level:"Erhöht",arch:"zusätzliche technische/organisatorische Maßnahmen",cost:"höhere Betriebs- und Projektkosten",time:"mehr Konzeption, Test und Abstimmung",proof:"erweiterte Nachweise / Tests"},
+      {level:"Sehr hoch",arch:"hochverfügbare bzw. besonders abgesicherte Architektur",cost:"deutlich höhere Betriebs-, Infrastruktur- und Personalkosten",time:"längere Umsetzung und Beschaffung",proof:"umfangreiche Nachweise, Tests und regelmäßige Übungen"}
+    ],
+    source:"https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/IT-Grundschutz/it-grundschutz_node.html"
+  },
+  {
+    title:"Digitale Souveränität / Betrieb",
+    area:"Betriebsmodell",
+    level:"MUSS – im gesetzlichen Anwendungsbereich",
+    status:"muss",
+    summary:"Das Betriebsmodell muss gegen den konkreten Anwendungsbereich des HmbITSG geprüft werden.",
+    how:[
+      ["Anwendungsbereich prüfen","Zuerst klären, ob Verfahren oder zwingend notwendige Komponenten unter die gesetzliche Regelung fallen."],
+      ["Betriebsbestandteile zerlegen","Hosting, Datenhaltung, Plattformdienste, zentrale Services und Support getrennt betrachten."],
+      ["Betriebsmodell bewerten","Für jeden relevanten Bestandteil prüfen, ob das vorgesehene Betreiber-/Vergabemodell zulässig ist."],
+      ["Entscheidung dokumentieren","Bewertung, Ausnahmen und Begründung nachvollziehbar festhalten."]
+    ],
+    roles:[
+      {
+        role:"ITD",
+        task:"zentrale Auslegung und Betriebsleitplanken unterstützen",
+        evidence:"Auslegungshilfe / Betriebsprinzip / Referenzarchitektur",
+        obligation:"SOLL / Zuständigkeit konkret zu belegen",
+        badge:"should",
+        steps:["Anwendungsfälle strukturieren","wiederkehrende Auslegungsfragen dokumentieren","zulässige Betriebsmodelle beschreiben","offene Rechts-/Steuerungsfragen eskalieren"],
+        when:"bei neuen Betriebsmodellen, Beschaffungen und zentralen Plattformentscheidungen",
+        source:"https://suche.transparenz.hamburg.de/dataset/gesetz-zur-gewaehrleistung-der-digitalen-souveraenitaet-der-freien-und-hansestadt-hamburg-hambu",
+        note:"Eine konkrete zentrale Zuständigkeit von ITD darf nicht ohne interne Quelle behauptet werden."
+      },
+      {
+        role:"Behörde",
+        task:"Verfahren und zwingend notwendige Komponenten vollständig benennen",
+        evidence:"Verfahrensbeschreibung / Abhängigkeitsmodell / Betriebsentscheidung",
+        obligation:"MUSS, soweit zur rechtmäßigen Bewertung erforderlich",
+        badge:"must",
+        steps:["Fachverfahren abgrenzen","zwingend notwendige Komponenten identifizieren","aktuelles und geplantes Betriebsmodell dokumentieren","Prüfung gegen gesetzlichen Anwendungsbereich veranlassen"],
+        when:"vor Beschaffung, Vergabe oder wesentlicher Betriebsänderung",
+        source:"https://suche.transparenz.hamburg.de/dataset/gesetz-zur-gewaehrleistung-der-digitalen-souveraenitaet-der-freien-und-hansestadt-hamburg-hambu",
+        note:"Die konkrete Reichweite ergibt sich aus dem Gesetz und ggf. belastbaren Auslegungshilfen."
+      },
+      {
+        role:"Projekt / Einkauf",
+        task:"zulässiges Betriebs- und Vergabemodell umsetzen",
+        evidence:"Vergabeunterlagen / Betriebsentscheidung / Vertragsgestaltung",
+        obligation:"MUSS, wenn das Gesetz auf den konkreten Fall anwendbar ist",
+        badge:"must",
+        steps:["zulässiges Modell aus Vorprüfung übernehmen","Leistungsgegenstand entsprechend zuschneiden","Vergabeunterlagen anpassen","Abweichungen rechtlich und fachlich begründen"],
+        when:"vor Ausschreibung und Vertragsschluss",
+        source:"https://suche.transparenz.hamburg.de/dataset/gesetz-zur-gewaehrleistung-der-digitalen-souveraenitaet-der-freien-und-hansestadt-hamburg-hambu",
+        note:"Nur im konkreten gesetzlichen Anwendungsbereich als MUSS behandeln."
+      }
+    ],
+    open:"Zu prüfen: Welche Komponenten gelten im konkreten Fall als zwingend notwendig und welche Auslegungshilfen der FHH existieren hierzu?",
+    framework:"Verpflichtend ist die Einhaltung des HmbITSG im gesetzlichen Anwendungsbereich. Ermessensspielraum besteht bei der technischen Ausgestaltung innerhalb zulässiger Betriebsmodelle; gesetzliche Betreiber- und Vergabegrenzen bleiben verbindlich.",
+    consequences:[
+      {criterion:"Betriebsmodell",low:"Standardbetrieb innerhalb zulässiger öffentlicher Betreiberstruktur.",mid:"zusätzliche Integrations- oder Migrationsmaßnahmen, wenn bestehende Architektur nicht passt.",high:"größere Umstrukturierung des Betriebsmodells, ggf. Neuvergabe/Migration erforderlich."},
+      {criterion:"Abhängigkeiten",low:"wenige externe Abhängigkeiten.",mid:"zwingend notwendige Plattform-/Basisdienste müssen einzeln bewertet werden.",high:"komplexe Liefer- und Betriebsabhängigkeiten erhöhen Prüf-, Vertrags- und Migrationsaufwand."}
+    ],
+    impacts:[
+      {level:"Geringe Abweichung",arch:"bestehende Architektur weitgehend nutzbar",cost:"geringe Mehrkosten",time:"geringe Verzögerung",proof:"Begründung / Betriebsentscheidung"},
+      {level:"Mittlere Abweichung",arch:"Anpassung von Komponenten oder Betriebsgrenzen",cost:"zusätzliche Projekt- und Betriebskosten",time:"mehr Abstimmung und Migration",proof:"detaillierte Betriebs-/Vergabeentscheidung"},
+      {level:"Hohe Abweichung",arch:"grundlegende Neuordnung des Betriebs",cost:"deutlich höhere Migrations- und Betriebskosten",time:"erhebliche Verlängerung durch Beschaffung/Migration",proof:"umfangreiche rechtliche und technische Dokumentation"}
+    ],
+    source:"https://suche.transparenz.hamburg.de/dataset/gesetz-zur-gewaehrleistung-der-digitalen-souveraenitaet-der-freien-und-hansestadt-hamburg-hambu"
+  },
+  {
+    title:"Schnittstellen / Fachstandards",
+    area:"Integration",
+    level:"abhängig vom konkreten Standard",
+    status:"offen",
+    summary:"XÖV ist ein Standardisierungsrahmen. Einzelne XÖV-/Fachstandards können verbindlich beschlossen sein; maßgeblich sind Standard, Geltungsbereich, Beschluss-/Rechtsgrundlage und ggf. Frist.",
+    how:[
+      ["Datenaustausch identifizieren","Ermitteln, welche externen Stellen, Register oder Fachverfahren angebunden werden."],
+      ["Passenden Standard suchen","Für jeden Austausch prüfen, ob ein fachlicher oder föderaler Standard existiert."],
+      ["Verbindlichkeit prüfen","Nicht aus dem Namen des Standards ableiten, sondern konkrete Rechts-/Beschlussgrundlage prüfen."],
+      ["Schnittstelle implementieren","Schema, Transport, Versionierung und Fehlerbehandlung gemäß verbindlichem Standard umsetzen."]
+    ],
+    roles:[
+      {
+        role:"ITD",
+        task:"übergreifende Interoperabilitätsprinzipien unterstützen",
+        evidence:"Architekturvorgabe / API-Prinzipien",
+        obligation:"UNKLAR / interne Vorgabe zu prüfen",
+        badge:"unclear",
+        steps:["wiederkehrende Integrationsmuster definieren","zulässige Protokolle/Patterns dokumentieren","zentrale Dienste transparent machen","Fachstandards nicht pauschal verallgemeinern"],
+        when:"bei Architekturvorgaben und wiederverwendbaren Integrationsdiensten",
+        source:"https://www.it-planungsrat.de/produkte-standards/standards",
+        note:"Ohne konkrete FHH-interne Quelle keine verbindliche Rolle behaupten."
+      },
+      {
+        role:"Behörde",
+        task:"fachliche Austauschbeziehungen und Pflichtstandards identifizieren",
+        evidence:"Schnittstellenkatalog / Fachkonzept",
+        obligation:"MUSS, wenn konkreter Fachstandard verbindlich ist",
+        badge:"must",
+        steps:["alle externen Austauschbeziehungen erfassen","je Beziehung einschlägigen Fachstandard suchen","Rechts-/Beschlussgrundlage prüfen","verbindlichen Standard in Anforderungen übernehmen"],
+        when:"vor Beschaffung/Entwicklung einer Schnittstelle",
+        source:"https://www.it-planungsrat.de/produkte-standards/standards",
+        note:"Ohne konkreten Standard keine pauschale Verpflichtung."
+      },
+      {
+        role:"Projekt / Dienstleister",
+        task:"technische Konformität herstellen",
+        evidence:"Schnittstellenspezifikation / Konformitätstest",
+        obligation:"MUSS, wenn Standard verbindlich vorgegeben",
+        badge:"must",
+        steps:["Version und Profil festlegen","Schema/Transport implementieren","Fehlerfälle und Versionierung abdecken","Konformität testen"],
+        when:"bei Umsetzung und vor produktiver Anbindung",
+        source:"https://www.it-planungsrat.de/produkte-standards/standards",
+        note:"Pflichtgrad folgt dem konkreten Standard, nicht XÖV als Sammelbegriff."
+      }
+    ],
+    open:"Zu ermitteln sind der einschlägige Standard, sein Geltungsbereich, die konkrete Verbindlichkeitsgrundlage und ggf. Umsetzungsfristen. Beispiele für verbindlich beschlossene Standards sind XZuFi im festgelegten OZG-Kontext sowie XBau/XPlanung für den festgelegten Bau-/Planungs-Datenaustausch.",
+    framework:"Verbindlich beschlossene Fachstandards sind innerhalb ihres festgelegten Geltungsbereichs einzuhalten. XÖV als Rahmen allein begründet jedoch nicht automatisch die Verbindlichkeit jedes XÖV-Standards. Spielraum besteht nur dort, wo der konkrete Standard oder seine Umsetzungsregel Alternativen zulässt.",
+    consequences:[
+      {criterion:"Verbindlicher Standard vorhanden",low:"kein einschlägiger verbindlicher Fachstandard identifiziert; eine lokale Lösung ist nur zulässig, soweit keine andere verbindliche Vorgabe entgegensteht.",mid:"Standard ist fachlich empfohlen oder vorgesehen; Abweichung sollte begründet werden.",high:"Standard ist verbindlich; Schema, Version, Transport und Konformität müssen eingehalten werden."},
+      {criterion:"Integrationskomplexität",low:"Punkt-zu-Punkt-Anbindung mit begrenztem Datenumfang.",mid:"mehrere Systeme, Versionen oder Transformationslogiken.",high:"föderale/mehrseitige Integration mit hohen Anforderungen an Versionierung, Fehlerbehandlung und Konformität."},
+      {criterion:"Änderungsdynamik",low:"seltene Änderungen.",mid:"regelmäßige Versionswechsel.",high:"häufige Standard-/Schemaänderungen mit hohem Pflege- und Testbedarf."}
+    ],
+    impacts:[
+      {level:"Kein bindender Standard",arch:"mehr technischer Gestaltungsspielraum",cost:"kurzfristig niedriger, langfristig ggf. höhere Integrationskosten",time:"schneller umsetzbar",proof:"lokale Schnittstellendokumentation"},
+      {level:"Empfohlener Standard",arch:"stärkere Orientierung an Referenzmustern",cost:"moderater Mehraufwand",time:"zusätzliche Abstimmung",proof:"Begründung bei Abweichung sinnvoll"},
+      {level:"Verbindlicher Standard",arch:"Architektur muss Standardkonformität sicherstellen",cost:"höhere Entwicklungs-/Testkosten",time:"mehr Konformitäts- und Integrationstest",proof:"Spezifikation / Konformitätsnachweis"}
+    ],
+    source:"https://www.it-planungsrat.de/produkte-standards/standards"
+  },
+  {
+    title:"E2E-Digitalisierung / Fachverfahren",
+    area:"Fachverfahren / Prozess",
+    level:"Senatsbeschlossene Strategie mit konkreten Muss-Aussagen",
+    status:"soll",
+    summary:"Die Digitalstrategie 2025 enthält konkrete Muss-Aussagen für neue bzw. wesentlich geänderte Fachverfahren (Möglichkeit eines vollständig digitalen Prozesses). Sie ist eine Senatsstrategie, keine gesetzliche Norm; operative Konkretisierungen und Softwaregrundsätze sind zusätzlich zu prüfen.",
+    how:[
+      ["Prozess E2E modellieren","Bürger-/Unternehmenssicht und interne Verwaltungsbearbeitung gemeinsam betrachten."],
+      ["Medienbrüche markieren","Manuelle Übertragungen, Papier, E-Mail, Excel und Doppelerfassung sichtbar machen."],
+      ["Automatisierbare Schritte bestimmen","Datenübernahme, Prüfungen, Statuswechsel und Bescheiderzeugung systematisch identifizieren."],
+      ["Zielbild ableiten","Technische Komponenten und Verantwortlichkeiten entlang des Gesamtprozesses festlegen."]
+    ],
+    roles:[
+      {
+        role:"ITD",
+        task:"übergreifende Zielbilder und Architekturprinzipien konkretisieren",
+        evidence:"Zielarchitektur / Referenzmodell",
+        obligation:"SOLL / strategisch",
+        badge:"should",
+        steps:["strategische Aussagen in Architekturprinzipien übersetzen","Referenzbausteine definieren","Abhängigkeiten zu Querschnittsdiensten sichtbar machen","Lücken zwischen Strategie und Umsetzungsstandard markieren"],
+        when:"bei Fortschreibung von Zielbildern und Architekturvorgaben",
+        source:"https://digital.hamburg.de/",
+        note:"Operative Verbindlichkeit muss durch konkrete FHH-Vorgabe zusätzlich belegt werden."
+      },
+      {
+        role:"Behörde",
+        task:"fachlichen E2E-Prozess und Prioritäten verantworten",
+        evidence:"Prozessmodell / Sollprozess / Maßnahmenplan",
+        obligation:"SOLL / strategisch, konkreter Pflichtgrad zu prüfen",
+        badge:"should",
+        steps:["Ist-Prozess modellieren","Medienbrüche und Doppelerfassung identifizieren","Sollprozess fachlich festlegen","notwendige IT- und Organisationsmaßnahmen priorisieren"],
+        when:"bei Modernisierung, Neubeschaffung oder grundlegender Prozessänderung",
+        source:"https://digital.hamburg.de/",
+        note:"Nicht als gesetzliche MUSS-Pflicht behandeln, sofern keine spezifischere Vorgabe greift."
+      },
+      {
+        role:"Projekt",
+        task:"Sollprozess technisch und organisatorisch umsetzen",
+        evidence:"Lösungskonzept / Umsetzungsplan / Abnahme",
+        obligation:"MUSS nur, soweit in Auftrag/Vorgabe verbindlich gemacht",
+        badge:"unclear",
+        steps:["Sollprozess in Anforderungen übersetzen","Komponenten und Schnittstellen zuordnen","manuelle Restschritte begründen","Umsetzung gegen Zielbild prüfen"],
+        when:"während Konzeption und Umsetzung",
+        source:"https://digital.hamburg.de/",
+        note:"Der konkrete Pflichtgrad ergibt sich aus Projektauftrag, Beschaffung und weiteren verbindlichen Vorgaben."
+      }
+    ],
+    open:"Entscheidend ist die Nachschärfung: Welche strategischen Aussagen sind bereits durch operative FHH-Vorgaben konkretisiert – und wo besteht noch eine Lücke?",
+    framework:"Die Digitalstrategie 2025 fordert für neue bzw. grundlegende Änderungen von Fachverfahren, dass die Möglichkeit eines vollständig digitalen Prozesses in der Software von Anfang an besteht. Sie legt jedoch nicht jeden technischen Umsetzungsschritt fest. Die rechtliche bzw. interne Bindungswirkung ist von Gesetzespflichten zu unterscheiden; konkrete Softwaregrundsätze und operative FHH-Vorgaben sind ergänzend heranzuziehen.",
+    consequences:[
+      {criterion:"Medienbruchfreiheit",low:"einzelne manuelle Schritte bleiben bestehen.",mid:"wesentliche Übergaben sind digital, einzelne Restbrüche bleiben begründet.",high:"durchgängige digitale Verarbeitung mit möglichst automatisierten Übergaben."},
+      {criterion:"Automatisierungsgrad",low:"überwiegend manuelle Sachbearbeitung.",mid:"Teilautomatisierung bei Datenübernahme, Prüfungen oder Statuswechseln.",high:"weitgehend automatisierte Prozessschritte, sofern fachlich/rechtlich zulässig."},
+      {criterion:"Wiederverwendung zentraler Dienste",low:"viele lokale Lösungen.",mid:"teilweise Nutzung zentraler Querschnittsdienste.",high:"konsequente Nutzung verbindlich vorgegebener bzw. geeigneter zentraler Dienste."}
+    ],
+    impacts:[
+      {level:"Geringe E2E-Tiefe",arch:"mehr lokale Einzellösungen und Medienbrüche",cost:"kurzfristig niedriger, langfristig ggf. höhere Betriebs-/Prozesskosten",time:"schnellere Umsetzung",proof:"Begründung verbleibender Medienbrüche"},
+      {level:"Mittlere E2E-Tiefe",arch:"mehr Integration und Wiederverwendung",cost:"höhere Projektkosten, potenziell niedrigere Prozesskosten",time:"mehr Abstimmung und Integration",proof:"Prozess-/Architekturnachweise"},
+      {level:"Hohe E2E-Tiefe",arch:"starke Integration und Automatisierung",cost:"höhere Initialkosten und Betriebsanforderungen",time:"längere Konzeption/Umsetzung",proof:"umfangreiche Prozess-, Integrations- und Betriebsnachweise"}
+    ],
+    source:"https://digital.hamburg.de/"
+  }
+]
+
+const grid = document.getElementById('grid');
+const drawer = document.getElementById('drawer');
+const overlay = document.getElementById('overlay');
+const search = document.getElementById('search');
+let activeFilter = 'all';
+
+function render(){
+  const q = search.value.toLowerCase();
+  grid.innerHTML = '';
+  data.filter(x=>{
+    const hit = (x.title+' '+x.area+' '+x.summary).toLowerCase().includes(q);
+    const f = activeFilter==='all' || x.status===activeFilter;
+    return hit && f;
+  }).forEach((x,i)=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `
+      <h3>${x.title}</h3>
+      <p>${x.summary}</p>
+      <div class="meta">
+        <span class="tag">${x.area}</span>
+        <span class="tag ${x.status==='muss'?'must':x.status==='soll'?'should':x.status==='offen'?'open':''}">${x.level}</span>
+      </div>`;
+    card.onclick=()=>openDrawer(x);
+    grid.appendChild(card);
+  });
+}
+
+function openDrawer(x){
+  document.getElementById('dTitle').textContent=x.title;
+  document.getElementById('dSub').textContent=x.area+' · '+x.level;
+  document.getElementById('dHow').innerHTML=x.how.map((h,i)=>`
+    <div class="how"><div class="num">${i+1}</div><div><b>${h[0]}</b><span>${h[1]}</span></div></div>
+  `).join('');
+  document.getElementById('dRoles').innerHTML=x.roles.map((r,i)=>`
+    <tr class="role-row" onclick="toggleRoleDetail(${i})">
+      <td><span class="role-link">${r.role}</span></td>
+      <td>${r.task}</td>
+      <td>${r.evidence}</td>
+    </tr>
+    <tr class="role-detail" id="role-detail-${i}">
+      <td colspan="3">
+        <div class="detail-panel">
+          <div><b>Konkrete Aufgaben für ${r.role}</b></div>
+          <div class="task-list">
+            ${r.steps.map((s,j)=>`
+              <div class="task-card">
+                <div class="task-head" onclick="event.stopPropagation();toggleTaskDetail(${i},${j})">
+                  <div class="task-title">${s}</div>
+                  <span class="${r.badge==='must'?'must-badge':r.badge==='should'?'should-badge':r.badge==='can'?'can-badge':'unclear-badge'}">${r.obligation}</span>
+                </div>
+                <div class="task-body" id="task-${i}-${j}">
+                  <div class="task-body-grid">
+                    <div class="detail-item"><strong>Wann?</strong>${r.when}</div>
+                    <div class="detail-item"><strong>Nachweis</strong>${r.evidence}</div>
+                    <div class="detail-item full"><strong>Umsetzung</strong>Diese Aufgabe ist konkret im Projekt bzw. Betrieb umzusetzen und gegen die genannte Quelle zu prüfen.</div>
+                    <div class="detail-item full"><strong>Quelle</strong><a href="${r.source}" target="_blank" rel="noopener">${r.source}</a></div>
+                    <div class="detail-item full"><strong>Einordnung / Einschränkung</strong>${r.note}</div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  const decisionBox=document.getElementById('decisionBox');
+  if(x.framework){
+    decisionBox.style.display='block';
+    document.getElementById('dFramework').innerHTML=`
+      <table class="matrix-table">
+        <thead><tr><th>Rahmen</th><th>Bedeutung</th></tr></thead>
+        <tbody>
+          <tr><td class="criterion"><span class="mini-badge must">Verpflichtend</span></td><td>${x.framework.split('Ermessensspielraum')[0].replace(/\.$/,'')}.</td></tr>
+          <tr><td class="criterion"><span class="mini-badge choice">Spielraum</span></td><td>${x.framework.includes('Ermessensspielraum') ? 'Ermessensspielraum'+x.framework.split('Ermessensspielraum')[1] : 'Kein zusätzlicher Spielraum beschrieben.'}</td></tr>
+        </tbody>
+      </table>`;
+
+    document.getElementById('dConsequences').innerHTML=`
+      <div style="margin-top:12px"><b>Konkrete Konsequenzen je Kriterium</b></div>
+      <table class="matrix-table" style="margin-top:7px">
+        <thead>
+          <tr>
+            <th>Kriterium</th>
+            <th>Standard</th>
+            <th>Erhöht</th>
+            <th>Hoch / sehr hoch</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${x.consequences.map(c=>`
+            <tr>
+              <td class="criterion">${c.criterion}</td>
+              <td>${c.low}</td>
+              <td class="choicecell">${c.mid}</td>
+              <td class="mustcell">${c.high}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    document.getElementById('dImpacts').innerHTML=`
+      <div style="margin-top:12px"><b>Auswirkungen der gewählten Ausprägung</b></div>
+      <table class="matrix-table" style="margin-top:7px">
+        <thead>
+          <tr>
+            <th>Ausprägung</th>
+            <th>Architektur / Betrieb</th>
+            <th>Kosten</th>
+            <th>Umsetzungszeit</th>
+            <th>Nachweisaufwand</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${x.impacts.map(i=>`
+            <tr>
+              <td class="criterion">${i.level}</td>
+              <td>${i.arch}</td>
+              <td>${i.cost}</td>
+              <td>${i.time}</td>
+              <td>${i.proof}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } else {
+    decisionBox.style.display='none';
+  }
+  document.getElementById('dOpen').innerHTML=`<span class="status open">Offen / zu prüfen:</span> ${x.open}`;
+  document.getElementById('dSource').innerHTML=`<a href="${x.source}" target="_blank" rel="noopener">${x.source}</a>`;
+  drawer.classList.add('open'); overlay.classList.add('show');
+}
+function toggleRoleDetail(i){
+  const row = document.getElementById('role-detail-'+i);
+  if(row) row.classList.toggle('open');
+}
+function toggleTaskDetail(i,j){
+  const body = document.getElementById('task-'+i+'-'+j);
+  if(body) body.classList.toggle('open');
+}
+function closeDrawer(){drawer.classList.remove('open');overlay.classList.remove('show')}
+document.getElementById('closeBtn').onclick=closeDrawer;
+overlay.onclick=closeDrawer;
+search.oninput=render;
+document.querySelectorAll('.pill').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter=btn.dataset.filter;
+    render();
+  }
+});
+render();
+</script>
+</body>
+</html>
